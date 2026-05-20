@@ -193,10 +193,19 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 		return r;
 	}
 
-	public struct function watermarkImage(required string srcPath, required string destPath, required string wmPath, required string positionName, required numeric opacity, numeric insets, struct opts = {}) hint="One-shot watermark" {
+	public struct function watermarkImage(required string srcPath, required string destPath, required string wmPath, required string positionName, required numeric opacity, numeric insets, struct opts = {}) hint="One-shot watermark; insets may be passed positionally or via opts.insets" {
 		of(arguments.srcPath);
+		var effInsets = "";
+		var hasInsets = false;
 		if (structKeyExists(arguments, "insets")) {
-			watermark(arguments.wmPath, arguments.positionName, arguments.opacity, arguments.insets);
+			effInsets = arguments.insets;
+			hasInsets = true;
+		} else if (structKeyExists(arguments.opts, "insets") && len(arguments.opts.insets)) {
+			effInsets = arguments.opts.insets;
+			hasInsets = true;
+		}
+		if (hasInsets) {
+			watermark(arguments.wmPath, arguments.positionName, arguments.opacity, effInsets);
 		} else {
 			watermark(arguments.wmPath, arguments.positionName, arguments.opacity);
 		}

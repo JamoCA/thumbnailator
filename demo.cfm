@@ -123,6 +123,12 @@
 		.result { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; margin-top: 1em; }
 		.result img { max-width: 100%; height: auto; border: 1px solid #ccc; }
 		summary {cursor:pointer;}
+		.toggle { background:#ddd; color:#444; border:1px solid #aaa; border-radius:3px; padding:2px 8px; cursor:pointer; font-family:monospace; font-size:0.85em; margin-right:0.5em; min-width:2.5em; }
+		.toggle.on { background:#cfc; color:#070; border-color:#7a7; }
+		.toggle.off { background:#f4f4f4; color:#888; }
+		.field-row { display:inline; }
+		.field-inactive input, .field-inactive select, .field-inactive textarea { opacity:0.4; }
+		.field-inactive label { opacity:0.4; }
 	</style>
 </head>
 <body>
@@ -234,30 +240,69 @@
 		</cfloop>
 	</select><br>
 	<label>opacity:</label> <input type="number" step="0.01" name="opacity" value="#encodeForHTMLAttribute(ff('opacity','0.5'))#" min="0" max="1"><br>
-	<label>insets:</label> <input type="number" name="insets" value="#encodeForHTMLAttribute(ff('insets','10'))#" min="0"><br>
+	<span class="field-row" data-field="insets">
+		<button type="button" class="toggle on" data-target="insets" title="omit this option">on</button>
+		<label>insets:</label> <input type="number" name="insets" value="#encodeForHTMLAttribute(ff('insets','10'))#" min="0">
+	</span><br>
 	<label>sourceRegion x,y,w,h:</label>
 	<input type="number" name="rx" value="#encodeForHTMLAttribute(ff('rx','0'))#" style="width:5em">
 	<input type="number" name="ry" value="#encodeForHTMLAttribute(ff('ry','0'))#" style="width:5em">
 	<input type="number" name="rw" value="#encodeForHTMLAttribute(ff('rw','200'))#" style="width:5em">
 	<input type="number" name="rh" value="#encodeForHTMLAttribute(ff('rh','150'))#" style="width:5em"><br>
-	<label>outputFormat:</label>
-	<select name="fmt">
-		<cfloop array="#['(original)','jpg','png','gif','bmp']#" index="f">
-			<option value="#f#"<cfif structKeyExists(form,'fmt') && form.fmt eq f> selected</cfif>>#f#</option>
-		</cfloop>
-	</select><br>
-	<label>quality (0-1):</label> <input type="number" step="0.01" name="quality" value="#encodeForHTMLAttribute(ff('quality','0.85'))#" min="0" max="1"><br>
-	<label>scalingMode:</label>
-	<select name="scaling">
-		<cfloop array="#['default','quality','speed','bilinear','bicubic','progressive_bilinear']#" index="s">
-			<option value="#s#"<cfif structKeyExists(form,'scaling') && form.scaling eq s> selected</cfif>>#s#</option>
-		</cfloop>
-	</select><br>
-	<label>useExifOrientation:</label>
-	<select name="exif">
-		<option value="yes"<cfif !structKeyExists(form,'exif') || form.exif eq 'yes'> selected</cfif>>yes</option>
-		<option value="no"<cfif structKeyExists(form,'exif') && form.exif eq 'no'> selected</cfif>>no</option>
-	</select><br>
+	<span class="field-row" data-field="fmt">
+		<button type="button" class="toggle on" data-target="fmt" title="omit this option">on</button>
+		<label>outputFormat:</label>
+		<select name="fmt">
+			<cfloop array="#['(original)','jpg','png','gif','bmp']#" index="f">
+				<option value="#f#"<cfif structKeyExists(form,'fmt') && form.fmt eq f> selected</cfif>>#f#</option>
+			</cfloop>
+		</select>
+	</span><br>
+	<span class="field-row" data-field="quality">
+		<button type="button" class="toggle on" data-target="quality" title="omit this option">on</button>
+		<label>quality (0-1):</label> <input type="number" step="0.01" name="quality" value="#encodeForHTMLAttribute(ff('quality','0.85'))#" min="0" max="1">
+	</span><br>
+	<span class="field-row" data-field="scaling">
+		<button type="button" class="toggle on" data-target="scaling" title="omit this option">on</button>
+		<label>scalingMode:</label>
+		<select name="scaling">
+			<cfloop array="#['default','quality','speed','bilinear','bicubic','progressive_bilinear']#" index="s">
+				<option value="#s#"<cfif structKeyExists(form,'scaling') && form.scaling eq s> selected</cfif>>#s#</option>
+			</cfloop>
+		</select>
+	</span><br>
+	<span class="field-row" data-field="exif">
+		<button type="button" class="toggle on" data-target="exif" title="omit this option">on</button>
+		<label>useExifOrientation:</label>
+		<select name="exif">
+			<option value="yes"<cfif !structKeyExists(form,'exif') || form.exif eq 'yes'> selected</cfif>>yes</option>
+			<option value="no"<cfif structKeyExists(form,'exif') && form.exif eq 'no'> selected</cfif>>no</option>
+		</select>
+	</span><br>
+	<span class="field-row" data-field="exifPassthrough">
+		<button type="button" class="toggle on" data-target="exifPassthrough" title="omit this option">on</button>
+		<label>exifPassthrough:</label>
+		<select name="exifPassthrough">
+			<option value="1"<cfif structKeyExists(form,'exifPassthrough') && form.exifPassthrough eq '1'> selected</cfif>>yes</option>
+			<option value="0"<cfif !structKeyExists(form,'exifPassthrough') || form.exifPassthrough eq '0'> selected</cfif>>no</option>
+		</select>
+	</span><br>
+	<span class="field-row field-inactive" data-field="allowOverwrite">
+		<button type="button" class="toggle off" data-target="allowOverwrite" title="omit this option">off</button>
+		<label>allowOverwrite:</label>
+		<select name="allowOverwrite" disabled>
+			<option value="yes"<cfif structKeyExists(form,'allowOverwrite') && form.allowOverwrite eq 'yes'> selected</cfif>>yes</option>
+			<option value="no"<cfif !structKeyExists(form,'allowOverwrite') || form.allowOverwrite eq 'no'> selected</cfif>>no</option>
+		</select>
+	</span><br>
+	<span class="field-row field-inactive" data-field="keepAspectRatio">
+		<button type="button" class="toggle off" data-target="keepAspectRatio" title="omit this option">off</button>
+		<label>keepAspectRatio:</label>
+		<select name="keepAspectRatio" disabled>
+			<option value="yes"<cfif structKeyExists(form,'keepAspectRatio') && form.keepAspectRatio eq 'yes'> selected</cfif>>yes</option>
+			<option value="no"<cfif !structKeyExists(form,'keepAspectRatio') || form.keepAspectRatio eq 'no'> selected</cfif>>no</option>
+		</select>
+	</span><br>
 	<label>fluent chain (only for fluent-chain op):</label><br>
 	<textarea name="chain" rows="6" cols="60">#encodeForHTML(ff('chain','size 320 240' & chr(10) & 'rotate 90' & chr(10) & 'outputFormat jpg' & chr(10) & 'outputQuality 0.8'))#</textarea><br>
 	<button type="submit" name="run" value="1">Run transform</button>
@@ -303,10 +348,18 @@
 	if (structKeyExists(form, "run")) {
 		try {
 			srcPath = demoImageDir & form.src;
-			ext = (form.fmt eq "(original)") ? listLast(form.src, ".") : form.fmt;
+			hasFmt = structKeyExists(form, "fmt") && len(form.fmt) && form.fmt neq "(original)";
+			ext = hasFmt ? form.fmt : listLast(form.src, ".");
 			destPath = demoOutputDir & "sandbox-" & createUUID() & "." & ext;
-			opts = ["scalingMode": form.scaling, "quality": form.quality, "useExifOrientation": (form.exif eq "yes")];
-			if (form.fmt neq "(original)") opts.outputFormat = form.fmt;
+
+			opts = {};
+			if (structKeyExists(form, "scaling") && len(form.scaling))            opts.scalingMode = form.scaling;
+			if (structKeyExists(form, "quality") && len(form.quality))            opts.quality = form.quality;
+			if (structKeyExists(form, "exif") && len(form.exif))                  opts.useExifOrientation = (form.exif eq "yes");
+			if (hasFmt)                                                            opts.outputFormat = form.fmt;
+			if (structKeyExists(form, "exifPassthrough") && form.exifPassthrough eq "1") opts.exifPassthrough = javacast("boolean", 1);
+			if (structKeyExists(form, "allowOverwrite") && len(form.allowOverwrite))     opts.allowOverwrite = (form.allowOverwrite eq "yes");
+			if (structKeyExists(form, "keepAspectRatio") && len(form.keepAspectRatio))   opts.keepAspectRatio = (form.keepAspectRatio eq "yes");
 
 			generatedCode = "";
 			wmPath = demoOutputDir & "watermark.png";
@@ -329,20 +382,33 @@
 					generatedCode = 'thumb.cropImage(src, dest, ' & form.w & ', ' & form.h & ', "' & form.position & '", ' & serializeJSON(opts) & ');';
 					break;
 				case "watermark":
-					result = thumb.watermarkImage(srcPath, destPath, wmPath, form.position, form.opacity, form.insets, opts);
-					generatedCode = 'thumb.watermarkImage(src, dest, wmPath, "' & form.position & '", ' & form.opacity & ', ' & form.insets & ', ' & serializeJSON(opts) & ');';
+					wmOpts = duplicate(opts);
+					if (structKeyExists(form, "insets") && len(form.insets)) {
+						wmOpts.insets = form.insets;
+						result = thumb.watermarkImage(srcPath, destPath, wmPath, form.position, form.opacity, form.insets, wmOpts);
+						generatedCode = 'thumb.watermarkImage(src, dest, wmPath, "' & form.position & '", ' & form.opacity & ', ' & form.insets & ', ' & serializeJSON(wmOpts) & ');';
+					} else {
+						/* Call via argumentCollection to skip the positional insets arg cleanly. */
+						wmArgs = ["srcPath": srcPath, "destPath": destPath, "wmPath": wmPath, "positionName": form.position, "opacity": form.opacity, "opts": wmOpts];
+						result = thumb.watermarkImage(argumentCollection = wmArgs);
+						generatedCode = 'thumb.watermarkImage(src, dest, wmPath, "' & form.position & '", ' & form.opacity & ', /*insets omitted*/ ' & serializeJSON(wmOpts) & ');';
+					}
 					break;
 				case "sourceRegion":
 					thumb.of(srcPath).sourceRegion(form.rx, form.ry, form.rw, form.rh).size(form.w, form.h);
-					if (form.fmt neq "(original)") thumb.outputFormat(form.fmt);
-					thumb.outputQuality(form.quality).scalingMode(form.scaling).useExifOrientation(form.exif eq "yes");
+					if (hasFmt) thumb.outputFormat(form.fmt);
+					if (structKeyExists(form, "quality") && len(form.quality))  thumb.outputQuality(form.quality);
+					if (structKeyExists(form, "scaling") && len(form.scaling))  thumb.scalingMode(form.scaling);
+					if (structKeyExists(form, "exif") && len(form.exif))        thumb.useExifOrientation(form.exif eq "yes");
+					if (structKeyExists(form, "keepAspectRatio") && len(form.keepAspectRatio)) thumb.keepAspectRatio(form.keepAspectRatio eq "yes");
+					if (structKeyExists(form, "allowOverwrite") && len(form.allowOverwrite))   thumb.allowOverwrite(form.allowOverwrite eq "yes");
 					result = thumb.toFile(destPath);
 					generatedCode = 'thumb.of(src).sourceRegion(' & form.rx & ',' & form.ry & ',' & form.rw & ',' & form.rh & ').size(' & form.w & ',' & form.h & ').toFile(dest);';
 					break;
 				case "convertFormat":
 					cfOpts = duplicate(opts);
 					if (structKeyExists(cfOpts, "outputFormat")) structDelete(cfOpts, "outputFormat");
-					cfFmt = (form.fmt eq "(original)") ? "jpg" : form.fmt;
+					cfFmt = hasFmt ? form.fmt : "jpg";
 					result = thumb.convertFormat(srcPath, destPath, cfFmt, cfOpts);
 					generatedCode = 'thumb.convertFormat(src, dest, "' & cfFmt & '", ' & serializeJSON(cfOpts) & ');';
 					break;
@@ -368,4 +434,27 @@
 		}
 	}
 </cfscript>
+<script>
+(function() {
+	function setToggle(btn, on) {
+		var row = btn.closest('.field-row');
+		btn.classList.toggle('on', on);
+		btn.classList.toggle('off', !on);
+		btn.textContent = on ? 'on' : 'off';
+		if (row) row.classList.toggle('field-inactive', !on);
+		var inputs = row ? row.querySelectorAll('input, select, textarea') : [];
+		for (var i = 0; i < inputs.length; i++) inputs[i].disabled = !on;
+	}
+	var btns = document.querySelectorAll('.toggle');
+	for (var b = 0; b < btns.length; b++) {
+		(function(btn) {
+			setToggle(btn, btn.classList.contains('on'));
+			btn.addEventListener('click', function(e) {
+				e.preventDefault();
+				setToggle(btn, !btn.classList.contains('on'));
+			});
+		})(btns[b]);
+	}
+})();
+</script>
 </body></html>
