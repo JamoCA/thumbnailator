@@ -164,6 +164,30 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 		return toFile(arguments.destPath);
 	}
 
+	public any function watermark(required string wmPath, required string positionName, required numeric opacity, numeric insets) hint="Apply watermark image at the named position with opacity 0..1 and optional pixel insets" {
+		if (!fileExists(arguments.wmPath)) _throw("SourceNotFound", "Watermark file not found: " & arguments.wmPath, "");
+		_resolvePosition(arguments.positionName);
+		if (arguments.opacity lt 0 || arguments.opacity gt 1) _throw("InvalidArgument", "watermark opacity must be 0.0..1.0, got " & arguments.opacity, "");
+		if (structKeyExists(arguments, "insets")) {
+			arrayAppend(variables._ops, ["op": "watermark", "args": [arguments.wmPath, arguments.positionName, arguments.opacity, arguments.insets]]);
+		} else {
+			arrayAppend(variables._ops, ["op": "watermark", "args": [arguments.wmPath, arguments.positionName, arguments.opacity]]);
+		}
+		return this;
+	}
+
+	public struct function watermarkImage(required string srcPath, required string destPath, required string wmPath, required string positionName, required numeric opacity, numeric insets, struct opts = {}) hint="One-shot watermark" {
+		of(arguments.srcPath);
+		if (structKeyExists(arguments, "insets")) {
+			watermark(arguments.wmPath, arguments.positionName, arguments.opacity, arguments.insets);
+		} else {
+			watermark(arguments.wmPath, arguments.positionName, arguments.opacity);
+		}
+		scale(1.0);
+		_applyOpts(arguments.opts);
+		return toFile(arguments.destPath);
+	}
+
 	public struct function inspect(required string srcPath) hint="ImageIO-backed info about an image file" {
 		if (!fileExists(arguments.srcPath)) _throw("SourceNotFound", "Source file not found: " & arguments.srcPath, "");
 		var img = variables.JImageIO.read(variables.JFile.init(javacast("string", arguments.srcPath)));
@@ -270,6 +294,15 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 					break;
 				case "sourceRegionPos":
 					builder = builder.sourceRegion(_resolvePosition(step.args[1]), javacast("int", step.args[2]), javacast("int", step.args[3]));
+					break;
+				case "watermark":
+					var wmImage = variables.JImageIO.read(variables.JFile.init(javacast("string", step.args[1])));
+					if (isNull(wmImage)) _throw("UnsupportedImage", "Could not read watermark image: " & step.args[1], "");
+					if (arrayLen(step.args) gte 4) {
+						builder = builder.watermark(_resolvePosition(step.args[2]), wmImage, javacast("float", step.args[3]), javacast("int", step.args[4]));
+					} else {
+						builder = builder.watermark(_resolvePosition(step.args[2]), wmImage, javacast("float", step.args[3]));
+					}
 					break;
 				default:
 					_throw("InvalidArgument", "Unknown internal op: " & step.op, "");
