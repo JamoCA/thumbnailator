@@ -180,4 +180,78 @@
 
 	writeOutput("</div>");
 </cfscript>
+<cfscript>
+	function listDemoImages(required string dir) {
+		if (!directoryExists(arguments.dir)) return [];
+		var raw = directoryList(arguments.dir, false, "name");
+		var out = [];
+		for (var n in raw) if (reFindNoCase("\.(png|jpe?g|gif|bmp)$", n)) arrayAppend(out, n);
+		return out;
+	}
+
+	demoImages = listDemoImages(demoImageDir);
+	formSrc = (structKeyExists(form, "src") && len(form.src) && fileExists(demoImageDir & form.src)) ? form.src : "starter.png";
+	formOp = (structKeyExists(form, "op") && len(form.op)) ? form.op : "resize";
+
+	function ff(required string key, required string fallback) {
+		return (structKeyExists(form, arguments.key) && len(form[arguments.key])) ? form[arguments.key] : arguments.fallback;
+	}
+</cfscript>
+<cfoutput>
+<h2>Interactive sandbox</h2>
+<form method="post">
+	<label>Source image:</label>
+	<select name="src">
+		<cfloop array="#demoImages#" index="img">
+			<option value="#encodeForHTMLAttribute(img)#"<cfif img eq formSrc> selected</cfif>>#encodeForHTML(img)#</option>
+		</cfloop>
+	</select><br>
+
+	<label>Operation:</label>
+	<select name="op">
+		<cfloop array="#['resize','scale','rotate','crop','watermark','sourceRegion','convertFormat','fluent-chain']#" index="o">
+			<option value="#o#"<cfif o eq formOp> selected</cfif>>#o#</option>
+		</cfloop>
+	</select><br>
+
+	<label>width:</label> <input type="number" name="w" value="#encodeForHTMLAttribute(ff('w','200'))#" min="1" max="5000"><br>
+	<label>height:</label> <input type="number" name="h" value="#encodeForHTMLAttribute(ff('h','150'))#" min="1" max="5000"><br>
+	<label>factor (for scale):</label> <input type="number" step="0.01" name="factor" value="#encodeForHTMLAttribute(ff('factor','0.5'))#"><br>
+	<label>degrees (for rotate):</label> <input type="number" name="degrees" value="#encodeForHTMLAttribute(ff('degrees','90'))#"><br>
+	<label>position:</label>
+	<select name="position">
+		<cfloop array="#['center','top_left','top_center','top_right','left_center','right_center','bottom_left','bottom_center','bottom_right']#" index="p">
+			<option value="#p#"<cfif structKeyExists(form,'position') && form.position eq p> selected</cfif>>#p#</option>
+		</cfloop>
+	</select><br>
+	<label>opacity:</label> <input type="number" step="0.01" name="opacity" value="#encodeForHTMLAttribute(ff('opacity','0.5'))#" min="0" max="1"><br>
+	<label>insets:</label> <input type="number" name="insets" value="#encodeForHTMLAttribute(ff('insets','10'))#" min="0"><br>
+	<label>sourceRegion x,y,w,h:</label>
+	<input type="number" name="rx" value="#encodeForHTMLAttribute(ff('rx','0'))#" style="width:5em">
+	<input type="number" name="ry" value="#encodeForHTMLAttribute(ff('ry','0'))#" style="width:5em">
+	<input type="number" name="rw" value="#encodeForHTMLAttribute(ff('rw','200'))#" style="width:5em">
+	<input type="number" name="rh" value="#encodeForHTMLAttribute(ff('rh','150'))#" style="width:5em"><br>
+	<label>outputFormat:</label>
+	<select name="fmt">
+		<cfloop array="#['(original)','jpg','png','gif','bmp']#" index="f">
+			<option value="#f#"<cfif structKeyExists(form,'fmt') && form.fmt eq f> selected</cfif>>#f#</option>
+		</cfloop>
+	</select><br>
+	<label>quality (0-1):</label> <input type="number" step="0.01" name="quality" value="#encodeForHTMLAttribute(ff('quality','0.85'))#" min="0" max="1"><br>
+	<label>scalingMode:</label>
+	<select name="scaling">
+		<cfloop array="#['default','quality','speed','bilinear','bicubic','progressive_bilinear']#" index="s">
+			<option value="#s#"<cfif structKeyExists(form,'scaling') && form.scaling eq s> selected</cfif>>#s#</option>
+		</cfloop>
+	</select><br>
+	<label>useExifOrientation:</label>
+	<select name="exif">
+		<option value="yes"<cfif !structKeyExists(form,'exif') || form.exif eq 'yes'> selected</cfif>>yes</option>
+		<option value="no"<cfif structKeyExists(form,'exif') && form.exif eq 'no'> selected</cfif>>no</option>
+	</select><br>
+	<label>fluent chain (only for fluent-chain op):</label><br>
+	<textarea name="chain" rows="6" cols="60">#encodeForHTML(ff('chain','size 320 240' & chr(10) & 'rotate 90' & chr(10) & 'outputFormat jpg' & chr(10) & 'outputQuality 0.8'))#</textarea><br>
+	<button type="submit" name="run" value="1">Run transform</button>
+</form>
+</cfoutput>
 </body></html>
