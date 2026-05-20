@@ -1,0 +1,16 @@
+{
+    "name": "thumbnailator",
+    "version": "0.4.21+1",
+    "author": "James Moberg <james@sunstarmedia.com>",
+    "location": "",
+    "slug": "thumbnailator",
+    "shortDescription": "CFML wrapper for the Thumbnailator Java thumbnail library",
+    "type": "cfml-library",
+    "keywords": ["thumbnail", "image", "resize", "crop", "watermark", "rotate", "thumbnailator", "java"],
+    "engines": [
+        { "type": "adobe", "version": ">=2016.0.0" },
+        { "type": "lucee", "version": ">=5.0.0" },
+        { "type": "boxlang", "version": ">=1.0.0" }
+    ],
+    "ignore": ["**/.*", "tests/", "demo*.cfm", "demo-images/", "demo-output/", "server*.json", "docs/"]
+}
