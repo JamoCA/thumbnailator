@@ -1,4 +1,5 @@
 <cfsetting requesttimeout="300">
+<cfinclude template="_testHelper.cfm">
 <cfscript>
 	tests = ["test_smoke.cfm", "test_resize.cfm", "test_rotate.cfm", "test_crop.cfm", "test_watermark.cfm", "test_format.cfm", "test_fluent.cfm", "test_errors.cfm"];
 	totalPasses = 0;
@@ -6,8 +7,13 @@
 </cfscript>
 <cfoutput>
 <!doctype html><meta charset='utf-8'><title>Thumbnailator - all tests</title>
-<style>body{font-family:monospace}h2{margin-top:2em;border-top:2px solid ##ccc;padding-top:1em}</style>
+<style>
+	body{font-family:monospace}
+	h2{margin-top:2em;border-top:2px solid ##ccc;padding-top:1em}
+	.serverinfo{background:##f4f4f4;border:1px solid ##ccc;padding:0.6em 0.8em;margin:0.6em 0 1.4em;font-size:0.95em;color:##333}
+</style>
 <h1>Thumbnailator - full test suite</h1>
+<div class="serverinfo">#encodeForHTML(serverInfo())#</div>
 <cfloop array="#tests#" index="t">
 	<h2>#t#</h2>
 	<cftry>

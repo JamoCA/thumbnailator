@@ -101,7 +101,7 @@
 	<style>
 		body { font-family: -apple-system, Segoe UI, sans-serif; max-width: 1100px; margin: 1em auto; padding: 0 1em; }
 		h1, h2 { border-bottom: 1px solid #ccc; padding-bottom: 0.3em; }
-		.serverinfo { color:#666; font-size:0.9em; margin: 0.4em 0 1.5em; }
+		.serverinfo { background:#f4f4f4; border:1px solid #ccc; padding:0.6em 0.8em; margin:0.6em 0 1.4em; font-size:0.95em; color:#333; font-family:monospace; }
 		.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1em; }
 		.card { border: 1px solid #ddd; border-radius: 4px; padding: 0.8em; background: #fafafa; }
 		.card h3 { margin: 0 0 0.5em; font-size: 1em; }
