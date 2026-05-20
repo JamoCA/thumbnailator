@@ -1,18 +1,53 @@
 {
-    "name": "thumbnailator-boxlang",
-    "app": { "cfengine": "boxlang@1" },
-    "web": {
-        "host": "0.0.0.0",
-        "http": { "port": 8782 },
-        "rewrites": { "enable": true, "config": "urlrewrite.xml" },
-        "directoryBrowsing": true,
-        "blockSensitivePaths": true,
-        "webroot": "."
+    "name":"thumbnailator-boxlang",
+    "app":{
+        "cfengine":"boxlang@1",
+        "showErrors":true
     },
-    "jvm": { "heapSize": 512, "javaVersion": "openjdk21" },
-    "profile": "development",
-    "env": {
-        "THUMBNAILATOR_JAR_PATH": "${THUMBNAILATOR_JAR_PATH}",
-        "THUMBNAILATOR_JAR_DIR": "${THUMBNAILATOR_JAR_DIR}"
+    "web":{
+        "host":"0.0.0.0",
+        "http":{
+            "port":8782
+        },
+        "rewrites":{
+            "enable":false
+        },
+        "directoryBrowsing":true,
+        "blockSensitivePaths":true,
+        "webroot":"."
+    },
+    "jvm":{
+        "javaHome":"C:\\Program Files\\Java\\jdk-24",
+        "args":[
+            "-D:javax.xml.accessExternalDTD=''",
+            "-D:javax.xml.accessExternalSchema=''",
+            "-D:javax.xml.accessExternalStylesheet=''"
+        ],
+        "javaVersion":"openjdk21"
+    },
+    "profile":"development",
+    "env":{
+        "THUMBNAILATOR_JAR_PATH":"${THUMBNAILATOR_JAR_PATH}",
+        "THUMBNAILATOR_JAR_DIR":"${THUMBNAILATOR_JAR_DIR}"
+    },
+    "scripts":{
+        "onServerInitialInstall":"install bx-compat-cfml"
+    },
+    "debug":true,
+    "boxlang":{
+        "compatibility":{
+            "adobe":true
+        },
+        "modules":{
+            "bx-compat-cfml":{
+                "enabled":true,
+                "engine":"adobe",
+                "clientManagement":false,
+                "nullIsUndefined":true,
+                "booleansAreNumbers":true,
+                "lenientJSONParsing":false,
+                "queryNullToEmpty":true
+            }
+        }
     }
 }

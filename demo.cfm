@@ -114,6 +114,7 @@
 		.error { background: #fee; color: #900; padding: 0.6em; margin: 1em 0; border: 1px solid #faa; }
 		.result { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; margin-top: 1em; }
 		.result img { max-width: 100%; height: auto; border: 1px solid #ccc; }
+		summary {cursor:pointer;}
 	</style>
 </head>
 <body>

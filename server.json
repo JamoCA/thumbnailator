@@ -1,18 +1,26 @@
 {
-    "name": "thumbnailator-adobe",
-    "app": { "cfengine": "adobe@2016" },
-    "web": {
-        "host": "0.0.0.0",
-        "http": { "port": 8780 },
-        "rewrites": { "enable": true, "config": "urlrewrite.xml" },
-        "directoryBrowsing": true,
-        "blockSensitivePaths": true,
-        "webroot": "."
+    "name":"thumbnailator-adobe",
+    "app":{
+        "cfengine":"adobe@2016"
     },
-    "jvm": { "heapSize": 512 },
-    "profile": "development",
-    "env": {
-        "THUMBNAILATOR_JAR_PATH": "${THUMBNAILATOR_JAR_PATH}",
-        "THUMBNAILATOR_JAR_DIR": "${THUMBNAILATOR_JAR_DIR}"
+    "web":{
+        "host":"0.0.0.0",
+        "http":{
+            "port":8780
+        },
+        "rewrites":{
+            "enable":false
+        },
+        "directoryBrowsing":true,
+        "blockSensitivePaths":true,
+        "webroot":"."
+    },
+    "jvm":{
+        "heapSize":512
+    },
+    "profile":"development",
+    "env":{
+        "THUMBNAILATOR_JAR_PATH":"${THUMBNAILATOR_JAR_PATH}",
+        "THUMBNAILATOR_JAR_DIR":"${THUMBNAILATOR_JAR_DIR}"
     }
 }

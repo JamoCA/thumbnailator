@@ -9,19 +9,26 @@ component {
 	variables.jarPath = getEnv("THUMBNAILATOR_JAR_PATH", "");
 	variables.jarDir  = getEnv("THUMBNAILATOR_JAR_DIR", "");
 
-	variables.paths = [];
-	if (len(variables.jarPath) && fileExists(variables.jarPath)) {
-		arrayAppend(variables.paths, variables.jarPath);
-	} else if (len(variables.jarDir) && directoryExists(variables.jarDir)) {
-		arrayAppend(variables.paths, variables.jarDir);
-	} else {
-		arrayAppend(variables.paths, variables.appDir & "lib/thumbnailator/");
-	}
+	variables.paths = resolveJarPaths(variables.jarPath, variables.jarDir, variables.appDir & "lib/thumbnailator/");
 
 	this.javaSettings = [
 		"loadPaths":      variables.paths,
 		"reloadOnChange": false
 	];
+
+	private array function resolveJarPaths(required string jarPath, required string jarDir, required string bundledDir)
+			hint="Resolve a list of JAR file paths from env override or bundled fallback. Returns explicit file paths so BoxLang's classloader (which does not scan directories) can find them." {
+		var paths = [];
+		if (len(arguments.jarPath) && fileExists(arguments.jarPath)) {
+			arrayAppend(paths, arguments.jarPath);
+			return paths;
+		}
+		var dir = (len(arguments.jarDir) && directoryExists(arguments.jarDir)) ? arguments.jarDir : arguments.bundledDir;
+		if (!directoryExists(dir)) return paths;
+		var jars = directoryList(dir, false, "path", "*.jar");
+		for (var j in jars) arrayAppend(paths, j);
+		return paths;
+	}
 
 	private string function getEnv(required string name, string defaultValue = "")
 			hint="Reads system property then env var with fallback" {
