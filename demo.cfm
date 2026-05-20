@@ -254,4 +254,109 @@
 	<button type="submit" name="run" value="1">Run transform</button>
 </form>
 </cfoutput>
+<cfscript>
+	function runFluentChain(required any builder, required string srcPath, required string chainText, required string wmFallbackPath) {
+		arguments.builder.of(arguments.srcPath);
+		var lines = listToArray(arguments.chainText, chr(10), false, false);
+		var generated = ['thumb.of("' & arguments.srcPath & '")'];
+		for (var raw in lines) {
+			var line = trim(raw);
+			if (!len(line)) continue;
+			var parts = listToArray(line, " " & chr(9));
+			if (!arrayLen(parts)) continue;
+			var op = lcase(parts[1]);
+			switch (op) {
+				case "size":             arguments.builder.size(parts[2], parts[3]); arrayAppend(generated, ".size(" & parts[2] & "," & parts[3] & ")"); break;
+				case "forcesize":        arguments.builder.forceSize(parts[2], parts[3]); arrayAppend(generated, ".forceSize(" & parts[2] & "," & parts[3] & ")"); break;
+				case "width":            arguments.builder.width(parts[2]); arrayAppend(generated, ".width(" & parts[2] & ")"); break;
+				case "height":           arguments.builder.height(parts[2]); arrayAppend(generated, ".height(" & parts[2] & ")"); break;
+				case "scale":
+					if (arrayLen(parts) gte 3) { arguments.builder.scale(parts[2], parts[3]); arrayAppend(generated, ".scale(" & parts[2] & "," & parts[3] & ")"); }
+					else { arguments.builder.scale(parts[2]); arrayAppend(generated, ".scale(" & parts[2] & ")"); }
+					break;
+				case "rotate":           arguments.builder.rotate(parts[2]); arrayAppend(generated, ".rotate(" & parts[2] & ")"); break;
+				case "crop":             arguments.builder.crop(parts[2]); arrayAppend(generated, ".crop(""" & parts[2] & """)"); break;
+				case "watermark":
+					if (arrayLen(parts) gte 4) { arguments.builder.watermark(arguments.wmFallbackPath, parts[2], parts[3], parts[4]); arrayAppend(generated, ".watermark(wmPath,""" & parts[2] & """," & parts[3] & "," & parts[4] & ")"); }
+					else { arguments.builder.watermark(arguments.wmFallbackPath, parts[2], parts[3]); arrayAppend(generated, ".watermark(wmPath,""" & parts[2] & """," & parts[3] & ")"); }
+					break;
+				case "outputformat":     arguments.builder.outputFormat(parts[2]); arrayAppend(generated, ".outputFormat(""" & parts[2] & """)"); break;
+				case "outputquality":    arguments.builder.outputQuality(parts[2]); arrayAppend(generated, ".outputQuality(" & parts[2] & ")"); break;
+				case "scalingmode":      arguments.builder.scalingMode(parts[2]); arrayAppend(generated, ".scalingMode(""" & parts[2] & """)"); break;
+				case "useexiforientation": arguments.builder.useExifOrientation(parts[2] eq "true" || parts[2] eq "yes" || parts[2] eq "1"); arrayAppend(generated, ".useExifOrientation(" & parts[2] & ")"); break;
+				case "keepaspectratio":  arguments.builder.keepAspectRatio(parts[2] eq "true" || parts[2] eq "yes" || parts[2] eq "1"); arrayAppend(generated, ".keepAspectRatio(" & parts[2] & ")"); break;
+				default:                 throw(type="Thumbnailator.DemoChainError", message="Unknown chain op '" & op & "' on line: " & line);
+			}
+		}
+		return arrayToList(generated, "");
+	}
+
+	if (structKeyExists(form, "run")) {
+		try {
+			srcPath = demoImageDir & form.src;
+			ext = (form.fmt eq "(original)") ? listLast(form.src, ".") : form.fmt;
+			destPath = demoOutputDir & "sandbox-" & createUUID() & "." & ext;
+			opts = ["scalingMode": form.scaling, "quality": form.quality, "useExifOrientation": (form.exif eq "yes")];
+			if (form.fmt neq "(original)") opts.outputFormat = form.fmt;
+
+			generatedCode = "";
+			wmPath = demoOutputDir & "watermark.png";
+
+			switch (form.op) {
+				case "resize":
+					result = thumb.resize(srcPath, destPath, form.w, form.h, opts);
+					generatedCode = 'thumb.resize(src, dest, ' & form.w & ', ' & form.h & ', ' & serializeJSON(opts) & ');';
+					break;
+				case "scale":
+					result = thumb.scaleImage(srcPath, destPath, form.factor, opts);
+					generatedCode = 'thumb.scaleImage(src, dest, ' & form.factor & ', ' & serializeJSON(opts) & ');';
+					break;
+				case "rotate":
+					result = thumb.rotateImage(srcPath, destPath, form.degrees, opts);
+					generatedCode = 'thumb.rotateImage(src, dest, ' & form.degrees & ', ' & serializeJSON(opts) & ');';
+					break;
+				case "crop":
+					result = thumb.cropImage(srcPath, destPath, form.w, form.h, form.position, opts);
+					generatedCode = 'thumb.cropImage(src, dest, ' & form.w & ', ' & form.h & ', "' & form.position & '", ' & serializeJSON(opts) & ');';
+					break;
+				case "watermark":
+					result = thumb.watermarkImage(srcPath, destPath, wmPath, form.position, form.opacity, form.insets, opts);
+					generatedCode = 'thumb.watermarkImage(src, dest, wmPath, "' & form.position & '", ' & form.opacity & ', ' & form.insets & ', ' & serializeJSON(opts) & ');';
+					break;
+				case "sourceRegion":
+					thumb.of(srcPath).sourceRegion(form.rx, form.ry, form.rw, form.rh).size(form.w, form.h);
+					if (form.fmt neq "(original)") thumb.outputFormat(form.fmt);
+					thumb.outputQuality(form.quality).scalingMode(form.scaling).useExifOrientation(form.exif eq "yes");
+					result = thumb.toFile(destPath);
+					generatedCode = 'thumb.of(src).sourceRegion(' & form.rx & ',' & form.ry & ',' & form.rw & ',' & form.rh & ').size(' & form.w & ',' & form.h & ').toFile(dest);';
+					break;
+				case "convertFormat":
+					cfOpts = duplicate(opts);
+					if (structKeyExists(cfOpts, "outputFormat")) structDelete(cfOpts, "outputFormat");
+					cfFmt = (form.fmt eq "(original)") ? "jpg" : form.fmt;
+					result = thumb.convertFormat(srcPath, destPath, cfFmt, cfOpts);
+					generatedCode = 'thumb.convertFormat(src, dest, "' & cfFmt & '", ' & serializeJSON(cfOpts) & ');';
+					break;
+				case "fluent-chain":
+					generatedCode = runFluentChain(thumb, srcPath, form.chain, wmPath) & ".toFile(dest);";
+					result = thumb.toFile(destPath);
+					break;
+				default:
+					throw(type="Thumbnailator.DemoError", message="Unsupported operation: " & form.op);
+			}
+
+			srcInfo = thumb.inspect(srcPath);
+			resultUrl = "demo-output/" & listLast(result.destPath, "/\");
+			srcUrl    = "demo-images/" & form.src;
+
+			writeOutput("<h2>Result</h2><div class='result'>");
+			writeOutput("<div><div class='meta'>source: " & srcInfo.width & "x" & srcInfo.height & " - " & humanSize(srcInfo.sizeBytes) & " - " & encodeForHTML(srcInfo.format) & "</div><img src='" & encodeForHTMLAttribute(srcUrl) & "' alt=''></div>");
+			writeOutput("<div><div class='meta'>result: " & result.width & "x" & result.height & " - " & humanSize(result.sizeBytes) & " - " & encodeForHTML(result.format) & " - " & result.durationMs & " ms</div><img src='" & encodeForHTMLAttribute(resultUrl) & "' alt=''></div>");
+			writeOutput("</div>");
+			writeOutput("<h3>Generated CFC code</h3><pre style='background:##2d2d2d;color:##eee;padding:0.8em;overflow-x:auto'>" & encodeForHTML(generatedCode) & "</pre>");
+		} catch (any e) {
+			writeOutput("<div class='error'><b>" & encodeForHTML(e.type) & ":</b> " & encodeForHTML(e.message) & "<br><small>" & encodeForHTML(e.detail) & "</small></div>");
+		}
+	}
+</cfscript>
 </body></html>
