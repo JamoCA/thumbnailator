@@ -126,7 +126,8 @@
 		.toggle { background:#ddd; color:#444; border:1px solid #aaa; border-radius:3px; padding:2px 8px; cursor:pointer; font-family:monospace; font-size:0.85em; margin-right:0.5em; min-width:2.5em; }
 		.toggle.on { background:#cfc; color:#070; border-color:#7a7; }
 		.toggle.off { background:#f4f4f4; color:#888; }
-		.field-row { display:inline; }
+		.field-row { display:block; margin:0.25em 0; }
+		.field-row.op-hidden { display:none; }
 		.field-inactive input, .field-inactive select, .field-inactive textarea { opacity:0.4; }
 		.field-inactive label { opacity:0.4; }
 	</style>
@@ -215,41 +216,59 @@
 <cfoutput>
 <h2>Interactive sandbox</h2>
 <form method="post">
-	<label>Source image:</label>
-	<select name="src">
-		<cfloop array="#demoImages#" index="img">
-			<option value="#encodeForHTMLAttribute(img)#"<cfif img eq formSrc> selected</cfif>>#encodeForHTML(img)#</option>
-		</cfloop>
-	</select><br>
+	<span class="field-row">
+		<label>Source image:</label>
+		<select name="src">
+			<cfloop array="#demoImages#" index="img">
+				<option value="#encodeForHTMLAttribute(img)#"<cfif img eq formSrc> selected</cfif>>#encodeForHTML(img)#</option>
+			</cfloop>
+		</select>
+	</span>
 
-	<label>Operation:</label>
-	<select name="op">
-		<cfloop array="#['resize','scale','rotate','crop','watermark','sourceRegion','convertFormat','fluent-chain']#" index="o">
-			<option value="#o#"<cfif o eq formOp> selected</cfif>>#o#</option>
-		</cfloop>
-	</select><br>
+	<span class="field-row">
+		<label>Operation:</label>
+		<select name="op">
+			<cfloop array="#['resize','scale','rotate','crop','watermark','sourceRegion','convertFormat','fluent-chain']#" index="o">
+				<option value="#o#"<cfif o eq formOp> selected</cfif>>#o#</option>
+			</cfloop>
+		</select>
+	</span>
 
-	<label>width:</label> <input type="number" name="w" value="#encodeForHTMLAttribute(ff('w','200'))#" min="1" max="5000"><br>
-	<label>height:</label> <input type="number" name="h" value="#encodeForHTMLAttribute(ff('h','150'))#" min="1" max="5000"><br>
-	<label>factor (for scale):</label> <input type="number" step="0.01" name="factor" value="#encodeForHTMLAttribute(ff('factor','0.5'))#"><br>
-	<label>degrees (for rotate):</label> <input type="number" name="degrees" value="#encodeForHTMLAttribute(ff('degrees','90'))#"><br>
-	<label>position:</label>
-	<select name="position">
-		<cfloop array="#['center','top_left','top_center','top_right','left_center','right_center','bottom_left','bottom_center','bottom_right']#" index="p">
-			<option value="#p#"<cfif structKeyExists(form,'position') && form.position eq p> selected</cfif>>#p#</option>
-		</cfloop>
-	</select><br>
-	<label>opacity:</label> <input type="number" step="0.01" name="opacity" value="#encodeForHTMLAttribute(ff('opacity','0.5'))#" min="0" max="1"><br>
-	<span class="field-row" data-field="insets">
+	<span class="field-row" data-ops="resize,crop,sourceRegion">
+		<label>width:</label> <input type="number" name="w" value="#encodeForHTMLAttribute(ff('w','200'))#" min="1" max="5000">
+	</span>
+	<span class="field-row" data-ops="resize,crop,sourceRegion">
+		<label>height:</label> <input type="number" name="h" value="#encodeForHTMLAttribute(ff('h','150'))#" min="1" max="5000">
+	</span>
+	<span class="field-row" data-ops="scale">
+		<label>factor:</label> <input type="number" step="0.01" name="factor" value="#encodeForHTMLAttribute(ff('factor','0.5'))#">
+	</span>
+	<span class="field-row" data-ops="rotate">
+		<label>degrees:</label> <input type="number" name="degrees" value="#encodeForHTMLAttribute(ff('degrees','90'))#">
+	</span>
+	<span class="field-row" data-ops="crop,watermark">
+		<label>position:</label>
+		<select name="position">
+			<cfloop array="#['center','top_left','top_center','top_right','left_center','right_center','bottom_left','bottom_center','bottom_right']#" index="p">
+				<option value="#p#"<cfif structKeyExists(form,'position') && form.position eq p> selected</cfif>>#p#</option>
+			</cfloop>
+		</select>
+	</span>
+	<span class="field-row" data-ops="watermark">
+		<label>opacity:</label> <input type="number" step="0.01" name="opacity" value="#encodeForHTMLAttribute(ff('opacity','0.5'))#" min="0" max="1">
+	</span>
+	<span class="field-row" data-field="insets" data-ops="watermark">
 		<button type="button" class="toggle on" data-target="insets" title="omit this option">on</button>
 		<label>insets:</label> <input type="number" name="insets" value="#encodeForHTMLAttribute(ff('insets','10'))#" min="0">
-	</span><br>
-	<label>sourceRegion x,y,w,h:</label>
-	<input type="number" name="rx" value="#encodeForHTMLAttribute(ff('rx','0'))#" style="width:5em">
-	<input type="number" name="ry" value="#encodeForHTMLAttribute(ff('ry','0'))#" style="width:5em">
-	<input type="number" name="rw" value="#encodeForHTMLAttribute(ff('rw','200'))#" style="width:5em">
-	<input type="number" name="rh" value="#encodeForHTMLAttribute(ff('rh','150'))#" style="width:5em"><br>
-	<span class="field-row" data-field="fmt">
+	</span>
+	<span class="field-row" data-ops="sourceRegion">
+		<label>sourceRegion x,y,w,h:</label>
+		<input type="number" name="rx" value="#encodeForHTMLAttribute(ff('rx','0'))#" style="width:5em">
+		<input type="number" name="ry" value="#encodeForHTMLAttribute(ff('ry','0'))#" style="width:5em">
+		<input type="number" name="rw" value="#encodeForHTMLAttribute(ff('rw','200'))#" style="width:5em">
+		<input type="number" name="rh" value="#encodeForHTMLAttribute(ff('rh','150'))#" style="width:5em">
+	</span>
+	<span class="field-row" data-field="fmt" data-ops="resize,scale,rotate,crop,watermark,sourceRegion,convertFormat">
 		<button type="button" class="toggle on" data-target="fmt" title="omit this option">on</button>
 		<label>outputFormat:</label>
 		<select name="fmt">
@@ -257,12 +276,12 @@
 				<option value="#f#"<cfif structKeyExists(form,'fmt') && form.fmt eq f> selected</cfif>>#f#</option>
 			</cfloop>
 		</select>
-	</span><br>
-	<span class="field-row" data-field="quality">
+	</span>
+	<span class="field-row" data-field="quality" data-ops="resize,scale,rotate,crop,watermark,sourceRegion,convertFormat">
 		<button type="button" class="toggle on" data-target="quality" title="omit this option">on</button>
 		<label>quality (0-1):</label> <input type="number" step="0.01" name="quality" value="#encodeForHTMLAttribute(ff('quality','0.85'))#" min="0" max="1">
-	</span><br>
-	<span class="field-row" data-field="scaling">
+	</span>
+	<span class="field-row" data-field="scaling" data-ops="resize,scale,rotate,crop,watermark,sourceRegion,convertFormat">
 		<button type="button" class="toggle on" data-target="scaling" title="omit this option">on</button>
 		<label>scalingMode:</label>
 		<select name="scaling">
@@ -270,42 +289,46 @@
 				<option value="#s#"<cfif structKeyExists(form,'scaling') && form.scaling eq s> selected</cfif>>#s#</option>
 			</cfloop>
 		</select>
-	</span><br>
-	<span class="field-row" data-field="exif">
+	</span>
+	<span class="field-row" data-field="exif" data-ops="resize,scale,rotate,crop,watermark,sourceRegion,convertFormat">
 		<button type="button" class="toggle on" data-target="exif" title="omit this option">on</button>
 		<label>useExifOrientation:</label>
 		<select name="exif">
 			<option value="yes"<cfif !structKeyExists(form,'exif') || form.exif eq 'yes'> selected</cfif>>yes</option>
 			<option value="no"<cfif structKeyExists(form,'exif') && form.exif eq 'no'> selected</cfif>>no</option>
 		</select>
-	</span><br>
-	<span class="field-row" data-field="exifPassthrough">
+	</span>
+	<span class="field-row" data-field="exifPassthrough" data-ops="resize,scale,rotate,crop,watermark,sourceRegion,convertFormat">
 		<button type="button" class="toggle on" data-target="exifPassthrough" title="omit this option">on</button>
 		<label>exifPassthrough:</label>
 		<select name="exifPassthrough">
 			<option value="1"<cfif structKeyExists(form,'exifPassthrough') && form.exifPassthrough eq '1'> selected</cfif>>yes</option>
 			<option value="0"<cfif !structKeyExists(form,'exifPassthrough') || form.exifPassthrough eq '0'> selected</cfif>>no</option>
 		</select>
-	</span><br>
-	<span class="field-row field-inactive" data-field="allowOverwrite">
+	</span>
+	<span class="field-row field-inactive" data-field="allowOverwrite" data-ops="resize,scale,rotate,crop,watermark,sourceRegion,convertFormat">
 		<button type="button" class="toggle off" data-target="allowOverwrite" title="omit this option">off</button>
 		<label>allowOverwrite:</label>
 		<select name="allowOverwrite" disabled>
 			<option value="yes"<cfif structKeyExists(form,'allowOverwrite') && form.allowOverwrite eq 'yes'> selected</cfif>>yes</option>
 			<option value="no"<cfif !structKeyExists(form,'allowOverwrite') || form.allowOverwrite eq 'no'> selected</cfif>>no</option>
 		</select>
-	</span><br>
-	<span class="field-row field-inactive" data-field="keepAspectRatio">
+	</span>
+	<span class="field-row field-inactive" data-field="keepAspectRatio" data-ops="resize,scale,rotate,crop,watermark,sourceRegion,convertFormat">
 		<button type="button" class="toggle off" data-target="keepAspectRatio" title="omit this option">off</button>
 		<label>keepAspectRatio:</label>
 		<select name="keepAspectRatio" disabled>
 			<option value="yes"<cfif structKeyExists(form,'keepAspectRatio') && form.keepAspectRatio eq 'yes'> selected</cfif>>yes</option>
 			<option value="no"<cfif !structKeyExists(form,'keepAspectRatio') || form.keepAspectRatio eq 'no'> selected</cfif>>no</option>
 		</select>
-	</span><br>
-	<label>fluent chain (only for fluent-chain op):</label><br>
-	<textarea name="chain" rows="6" cols="60">#encodeForHTML(ff('chain','size 320 240' & chr(10) & 'rotate 90' & chr(10) & 'outputFormat jpg' & chr(10) & 'outputQuality 0.8'))#</textarea><br>
-	<button type="submit" name="run" value="1">Run transform</button>
+	</span>
+	<span class="field-row" data-ops="fluent-chain">
+		<label>fluent chain:</label><br>
+		<textarea name="chain" rows="6" cols="60">#encodeForHTML(ff('chain','size 320 240' & chr(10) & 'rotate 90' & chr(10) & 'outputFormat jpg' & chr(10) & 'outputQuality 0.8'))#</textarea>
+	</span>
+	<span class="field-row">
+		<button type="submit" name="run" value="1">Run transform</button>
+	</span>
 </form>
 </cfoutput>
 <cfscript>
@@ -454,6 +477,21 @@
 				setToggle(btn, !btn.classList.contains('on'));
 			});
 		})(btns[b]);
+	}
+
+	var opSelect = document.querySelector('select[name="op"]');
+	function updateOpVisibility() {
+		if (!opSelect) return;
+		var op = opSelect.value;
+		var rows = document.querySelectorAll('.field-row[data-ops]');
+		for (var i = 0; i < rows.length; i++) {
+			var ops = rows[i].getAttribute('data-ops').split(',');
+			rows[i].classList.toggle('op-hidden', ops.indexOf(op) === -1);
+		}
+	}
+	if (opSelect) {
+		opSelect.addEventListener('change', updateOpVisibility);
+		updateOpVisibility();
 	}
 })();
 </script>
