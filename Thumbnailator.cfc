@@ -122,6 +122,22 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 		return this;
 	}
 
+	public any function crop(required string positionName) hint="Crop at the specified position after resize" {
+		_resolvePosition(arguments.positionName);
+		arrayAppend(variables._ops, ["op": "crop", "args": [arguments.positionName]]);
+		return this;
+	}
+
+	public any function sourceRegion(required any arg1, required numeric arg2, required numeric arg3, numeric arg4) hint="Either (x,y,w,h) or (positionName,w,h)" {
+		if (structKeyExists(arguments, "arg4")) {
+			arrayAppend(variables._ops, ["op": "sourceRegion4", "args": [arguments.arg1, arguments.arg2, arguments.arg3, arguments.arg4]]);
+		} else {
+			_resolvePosition(arguments.arg1);
+			arrayAppend(variables._ops, ["op": "sourceRegionPos", "args": [arguments.arg1, arguments.arg2, arguments.arg3]]);
+		}
+		return this;
+	}
+
 	/* ---------- One-shot helpers ---------- */
 
 	public struct function resize(required string srcPath, required string destPath, required numeric width, required numeric height, struct opts = {}) hint="Resize srcPath to width x height preserving aspect by default" {
@@ -138,6 +154,12 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 
 	public struct function rotateImage(required string srcPath, required string destPath, required numeric degrees, struct opts = {}) hint="One-shot rotation" {
 		of(arguments.srcPath).rotate(arguments.degrees).scale(1.0);
+		_applyOpts(arguments.opts);
+		return toFile(arguments.destPath);
+	}
+
+	public struct function cropImage(required string srcPath, required string destPath, required numeric width, required numeric height, string positionName = "center", struct opts = {}) hint="One-shot center-crop or positioned crop to width x height" {
+		of(arguments.srcPath).crop(arguments.positionName).size(arguments.width, arguments.height);
 		_applyOpts(arguments.opts);
 		return toFile(arguments.destPath);
 	}
@@ -237,6 +259,18 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 				case "useExifOrientation":builder = builder.useExifOrientation(javacast("boolean", step.args[1])); break;
 				case "allowOverwrite":   builder = builder.allowOverwrite(javacast("boolean", step.args[1])); break;
 				case "scalingMode":      builder = builder.scalingMode(_resolveScalingMode(step.args[1])); break;
+				case "crop":             builder = builder.crop(_resolvePosition(step.args[1])); break;
+				case "sourceRegion4":
+					builder = builder.sourceRegion(
+						javacast("int", step.args[1]),
+						javacast("int", step.args[2]),
+						javacast("int", step.args[3]),
+						javacast("int", step.args[4])
+					);
+					break;
+				case "sourceRegionPos":
+					builder = builder.sourceRegion(_resolvePosition(step.args[1]), javacast("int", step.args[2]), javacast("int", step.args[3]));
+					break;
 				default:
 					_throw("InvalidArgument", "Unknown internal op: " & step.op, "");
 			}
