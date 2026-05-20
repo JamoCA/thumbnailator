@@ -195,6 +195,33 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 		return toFile(arguments.destPath);
 	}
 
+	public struct function batchResize(required string srcDir, required string destDir, required numeric width, required numeric height, struct opts = {}) hint="Resizes every image file in srcDir to destDir; returns aggregate summary plus per-file results" {
+		if (!directoryExists(arguments.srcDir)) _throw("SourceNotFound", "Source directory not found: " & arguments.srcDir, "");
+		if (!directoryExists(arguments.destDir)) createObject("java","java.io.File").init(javacast("string", arguments.destDir)).mkdirs();
+		var files = directoryList(arguments.srcDir, false, "path");
+		var results = [];
+		var totalBytes = 0;
+		var totalMs = 0;
+		for (var f in files) {
+			var leaf = listLast(f, "/\");
+			var dest = arguments.destDir & leaf;
+			try {
+				var r = resize(f, dest, arguments.width, arguments.height, arguments.opts);
+				arrayAppend(results, r);
+				totalBytes += r.sizeBytes;
+				totalMs += r.durationMs;
+			} catch (any e) {
+				arrayAppend(results, ["ok": javacast("boolean", false), "srcPath": f, "error": e.message]);
+			}
+		}
+		return [
+			"results":    results,
+			"count":      javacast("int", arrayLen(results)),
+			"totalBytes": javacast("long", totalBytes),
+			"totalMs":    javacast("long", totalMs)
+		];
+	}
+
 	public struct function inspect(required string srcPath) hint="ImageIO-backed info about an image file" {
 		if (!fileExists(arguments.srcPath)) _throw("SourceNotFound", "Source file not found: " & arguments.srcPath, "");
 		var img = variables.JImageIO.read(variables.JFile.init(javacast("string", arguments.srcPath)));
@@ -418,7 +445,7 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 
 	private void function _throwFromJava(required any javaException, string destPath = "") {
 		var msg = arguments.javaException.message;
-		if (msg contains "OverwriteBlocked" || msg contains "already exists") {
+		if (msg contains "OverwriteBlocked" || msg contains "already exists" || msg contains "destination file exists") {
 			_throw("OverwriteBlocked", "Destination exists and allowOverwrite=false: " & arguments.destPath, msg);
 		}
 		if (msg contains "Unsupported") {
