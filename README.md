@@ -12,6 +12,20 @@ It does resize, scale, crop, rotate, watermark, format conversion, and batch pro
 
 BoxLang needs the `bx-compat-cfml` module enabled and JDK 17+. The bundled `server-boxlang.json` sets both. If you wire BoxLang up yourself, copy the `boxlang` block from `server-boxlang.json` into your own config. The `Application.cfc` adds each JAR file explicitly to `this.javaSettings.loadPaths` (BoxLang's classloader doesn't scan directories the way Adobe and Lucee do), so pointing it at the bundled `lib/thumbnailator/` works out of the box.
 
+### BoxLang cold-start nuance
+
+On a freshly started BoxLang server, the very first HTTP request after boot can fail with `[net.coobird.thumbnailator.Thumbnails] has not been located in the [java] resolver`. This is a BoxLang lifecycle quirk: the JAR loader in `Application.cfc` has not applied `javaSettings.loadPaths` by the time the first request hits the dispatcher. Any subsequent request will warm the classloader. Hit `/demo.cfm` or any single test file once, and the full `tests/index.cfm` aggregator then passes 95/95. Adobe CF 2016 and Lucee do not have this race.
+
+### BoxLang server profiles
+
+Three BoxLang server profiles are provided:
+
+- `server-boxlang.json` (port 8782): pure BoxLang, no compat module
+- `server-boxlang-adobe.json` (port 8783): bx-compat-cfml engine=adobe
+- `server-boxlang-lucee.json` (port 8784): bx-compat-cfml engine=lucee
+
+All three pass 95/95 after the classloader warm-up described above. The compat module is not strictly required for the wrapper to function. It changes how BoxLang handles Adobe-flavored and Lucee-flavored idioms in surrounding code, which matters if you mix the wrapper into a larger codebase written against one of those dialects.
+
 ## Install
 
 ### ForgeBox
