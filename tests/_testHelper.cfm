@@ -53,6 +53,14 @@
 		if (structKeyExists(server, "boxlang")) {
 			engine = "BoxLang";
 			version = server.boxlang.version;
+			var compat = "";
+			try {
+				compat = createObject("java", "java.lang.System").getenv(javacast("string", "BOXLANG_COMPAT_MODE"));
+				if (isNull(compat)) compat = "";
+			} catch (any e) {
+				compat = "";
+			}
+			if (len(compat)) engine &= " (compat: " & compat & ")";
 		} else if (structKeyExists(server, "lucee")) {
 			engine = "Lucee";
 			version = server.lucee.version;

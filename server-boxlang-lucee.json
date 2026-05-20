@@ -1,5 +1,5 @@
 {
-    "name":"thumbnailator-boxlang",
+    "name":"thumbnailator-boxlang-lucee",
     "app":{
         "cfengine":"boxlang@1",
         "showErrors":true
@@ -7,7 +7,7 @@
     "web":{
         "host":"0.0.0.0",
         "http":{
-            "port":8782
+            "port":8784
         },
         "rewrites":{
             "enable":false
@@ -29,7 +29,26 @@
     "env":{
         "THUMBNAILATOR_JAR_PATH":"${THUMBNAILATOR_JAR_PATH}",
         "THUMBNAILATOR_JAR_DIR":"${THUMBNAILATOR_JAR_DIR}",
-        "BOXLANG_COMPAT_MODE":""
+        "BOXLANG_COMPAT_MODE":"lucee"
     },
-    "debug":true
+    "scripts":{
+        "onServerInitialInstall":"install bx-compat-cfml"
+    },
+    "debug":true,
+    "boxlang":{
+        "compatibility":{
+            "lucee":true
+        },
+        "modules":{
+            "bx-compat-cfml":{
+                "enabled":true,
+                "engine":"lucee",
+                "clientManagement":false,
+                "nullIsUndefined":true,
+                "booleansAreNumbers":true,
+                "lenientJSONParsing":false,
+                "queryNullToEmpty":true
+            }
+        }
+    }
 }
