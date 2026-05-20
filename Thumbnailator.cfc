@@ -53,6 +53,11 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 		return this;
 	}
 
+	public any function rotate(required numeric degrees) hint="Rotate clockwise by degrees" {
+		arrayAppend(variables._ops, ["op": "rotate", "args": [arguments.degrees]]);
+		return this;
+	}
+
 	public any function width(required numeric value) hint="Set width, height proportional" {
 		arrayAppend(variables._ops, ["op": "width", "args": [arguments.value]]);
 		return this;
@@ -127,6 +132,12 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 
 	public struct function scaleImage(required string srcPath, required string destPath, required numeric factor, struct opts = {}) hint="One-shot scale by factor" {
 		of(arguments.srcPath).scale(arguments.factor);
+		_applyOpts(arguments.opts);
+		return toFile(arguments.destPath);
+	}
+
+	public struct function rotateImage(required string srcPath, required string destPath, required numeric degrees, struct opts = {}) hint="One-shot rotation" {
+		of(arguments.srcPath).rotate(arguments.degrees).scale(1.0);
 		_applyOpts(arguments.opts);
 		return toFile(arguments.destPath);
 	}
@@ -213,6 +224,7 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 			switch (step.op) {
 				case "size":     builder = builder.size(javacast("int", step.args[1]), javacast("int", step.args[2])); break;
 				case "forceSize":builder = builder.forceSize(javacast("int", step.args[1]), javacast("int", step.args[2])); break;
+				case "rotate":   builder = builder.rotate(javacast("double", step.args[1])); break;
 				case "width":    builder = builder.width(javacast("int", step.args[1])); break;
 				case "height":   builder = builder.height(javacast("int", step.args[1])); break;
 				case "scale1":   builder = builder.scale(javacast("double", step.args[1])); break;

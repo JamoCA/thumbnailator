@@ -117,4 +117,104 @@
 			fis.close();
 		}
 	}
+
+	function makeJpegWithExifOrientation(required numeric orientation) hint="Writes a small JPEG with an EXIF APP1 segment carrying the given orientation tag (1-8)" {
+		var path = tempPath("jpg");
+
+		/* Build a 200x100 JPEG (landscape, red with a white left bar) */
+		var bi = createObject("java", "java.awt.image.BufferedImage").init(javacast("int", 200), javacast("int", 100), javacast("int", 1));
+		var g = bi.createGraphics();
+		try {
+			g.setColor(createObject("java", "java.awt.Color").RED);
+			g.fillRect(javacast("int", 0), javacast("int", 0), javacast("int", 200), javacast("int", 100));
+			g.setColor(createObject("java", "java.awt.Color").WHITE);
+			g.fillRect(javacast("int", 0), javacast("int", 0), javacast("int", 20), javacast("int", 100));
+		} finally {
+			g.dispose();
+		}
+		createObject("java", "javax.imageio.ImageIO").write(bi, javacast("string", "jpg"), createObject("java", "java.io.File").init(path));
+
+		/* Read the original file as a Java byte[] so we can splice in an APP1 segment */
+		var fis = createObject("java", "java.io.FileInputStream").init(path);
+		var fLen = createObject("java", "java.io.File").init(path).length();
+		var orig = createObject("java", "java.lang.reflect.Array").newInstance(createObject("java", "java.lang.Byte").TYPE, javacast("int", fLen));
+		fis.read(orig);
+		fis.close();
+
+		/* Compose an APP1/Exif segment with one IFD0 entry: Orientation (0x0112) = arguments.orientation.
+		   Layout (offsets relative to segment start, including marker bytes; total = 36 bytes):
+		     [0..1]   FF E1 (APP1 marker)
+		     [2..3]   00 22 (segment length = 34; length includes itself but not the marker)
+		     [4..9]   "Exif" 00 00
+		     [10..13] 49 49 2A 00 (little-endian TIFF header)
+		     [14..17] 08 00 00 00 (offset to IFD0 = 8 bytes from start of TIFF header)
+		     [18..19] 01 00 (1 IFD0 entry)
+		     [20..21] 12 01 (tag 0x0112)
+		     [22..23] 03 00 (type SHORT)
+		     [24..27] 01 00 00 00 (count = 1)
+		     [28..29] <orient_lo> <orient_hi> (orientation value, little-endian)
+		     [30..31] 00 00 (padding for 4-byte value slot)
+		     [32..35] 00 00 00 00 (next IFD offset = 0, no more IFDs)
+		   The 4-byte next IFD offset is required by Thumbnailator's ExifUtils.readIFD;
+		   without it the buffer underflows. Total content after length field = 32 bytes,
+		   plus 2 length bytes = 34 (the declared length). */
+
+		var orient = javacast("int", arguments.orientation);
+		var orientLo = bitAnd(orient, 255);
+		var orientHi = bitAnd(int(orient / 256), 255);
+
+		var seg = [
+			255, 225,                       /* APP1 marker */
+			0, 34,                          /* segment length (big-endian) = 34 (includes self) */
+			69, 120, 105, 102, 0, 0,        /* "Exif" then 00 00 */
+			73, 73, 42, 0,                  /* TIFF "II*\0" little-endian */
+			8, 0, 0, 0,                     /* IFD0 offset = 8 */
+			1, 0,                           /* 1 entry */
+			18, 1,                          /* tag = 0x0112 */
+			3, 0,                           /* type = SHORT */
+			1, 0, 0, 0,                     /* count = 1 */
+			orientLo, orientHi, 0, 0,       /* value (4 bytes; SHORT in low 2, pad 0 0) */
+			0, 0, 0, 0                      /* next IFD offset = 0 */
+		];
+
+		/* Find the length of the original APP0 (FFE0) segment after SOI (FFD8).
+		   bytes[0..1] = FFD8, bytes[2..3] = FFE0, bytes[4..5] = APP0 length (big-endian). */
+		var jReflectArray = createObject("java", "java.lang.reflect.Array");
+		var app0Len = bitOr(bitShln(bitAnd(jReflectArray.getByte(orig, javacast("int", 4)), 255), 8), bitAnd(jReflectArray.getByte(orig, javacast("int", 5)), 255));
+
+		/* New file layout: SOI (2) + our APP1 (30) + rest after old APP0 starting at offset 4 + app0Len */
+		var newLen = 2 + arrayLen(seg) + (fLen - 4 - app0Len);
+		var out = jReflectArray.newInstance(createObject("java", "java.lang.Byte").TYPE, javacast("int", newLen));
+
+		/* Copy SOI (FF D8) using reflection setByte (0-based Java indices) */
+		jReflectArray.setByte(out, javacast("int", 0), jReflectArray.getByte(orig, javacast("int", 0)));
+		jReflectArray.setByte(out, javacast("int", 1), jReflectArray.getByte(orig, javacast("int", 1)));
+
+		/* Copy our APP1 segment, converting unsigned ints 0..255 to signed Java bytes */
+		var idx = 2;
+		for (var i = 1; i lte arrayLen(seg); i++) {
+			var b = seg[i];
+			if (b gt 127) b = b - 256;
+			jReflectArray.setByte(out, javacast("int", idx), javacast("byte", javacast("int", b)));
+			idx++;
+		}
+
+		/* Copy the rest of the original file after the old APP0.
+		   Original 0-based offsets: [0..1]=SOI, [2..3]=APP0 marker, [4..5]=APP0 length, [6..(3+app0Len)]=APP0 body.
+		   Continue from offset 4+app0Len = first byte after APP0. */
+		for (var i = 4 + app0Len; i lt fLen; i++) {
+			jReflectArray.setByte(out, javacast("int", idx), jReflectArray.getByte(orig, javacast("int", i)));
+			idx++;
+		}
+
+		/* Write the spliced file back */
+		var fos = createObject("java", "java.io.FileOutputStream").init(path);
+		try {
+			fos.write(out);
+		} finally {
+			fos.close();
+		}
+
+		return path;
+	}
 </cfscript>
