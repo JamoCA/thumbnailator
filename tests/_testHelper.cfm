@@ -61,7 +61,9 @@
 	}
 
 	variables.outDir = expandPath("../demo-output/test/");
-	if (!directoryExists(variables.outDir)) directoryCreate(variables.outDir, true);
+	if (!directoryExists(variables.outDir)) {
+		createObject("java", "java.io.File").init(javacast("string", variables.outDir)).mkdirs();
+	}
 
 	function tempPath(required string suffix) {
 		return variables.outDir & createUUID() & "." & arguments.suffix;
