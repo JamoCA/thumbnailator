@@ -12,5 +12,22 @@
         { "type": "lucee", "version": ">=5.0.0" },
         { "type": "boxlang", "version": ">=1.0.0" }
     ],
-    "ignore": ["**/.*", "tests/", "demo*.cfm", "demo-images/", "demo-output/", "server*.json", "docs/"]
+    "ignore": [
+        ".git*",
+        ".env",
+        ".cfformat.json",
+        ".engine/",
+        ".bx-server/",
+        ".boxr/",
+        ".idea/",
+        ".vscode/",
+        ".DS_Store",
+        "Thumbs.db",
+        "tests/",
+        "demo*.cfm",
+        "demo-images/",
+        "demo-output/",
+        "server*.json",
+        "docs/"
+    ]
 }

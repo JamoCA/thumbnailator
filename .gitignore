@@ -13,10 +13,6 @@ WEB-INF/
 .env
 docs/
 lib/
-dump.cfm
-PUBLISHING.md
-slideshow/
-JSONUtil/
 demo-output/*
 !demo-output/.gitkeep
 demo-images/*

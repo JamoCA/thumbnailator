@@ -242,8 +242,8 @@
 		}
 	}
 
-	imBin = envOrDefault("IMAGEMAGICK_BIN", "C:\CFusionExtra\ImageMagick\magick.exe");
-	gmBin = envOrDefault("GRAPHICSMAGICK_BIN", "C:\CFusionExtra\GraphicsMagick\gm.exe");
+	imBin = envOrDefault("IMAGEMAGICK_BIN", "C:\ImageMagick\magick.exe");
+	gmBin = envOrDefault("GRAPHICSMAGICK_BIN", "C:\GraphicsMagick\gm.exe");
 
 	imAvailable = fileExists(imBin);
 	gmAvailable = fileExists(gmBin);
