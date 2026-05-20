@@ -63,6 +63,15 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 		return this;
 	}
 
+	public any function scale(required numeric factor, numeric factorY) hint="Uniform scale or independent w/h scale" {
+		if (structKeyExists(arguments, "factorY")) {
+			arrayAppend(variables._ops, ["op": "scale2", "args": [arguments.factor, arguments.factorY]]);
+		} else {
+			arrayAppend(variables._ops, ["op": "scale1", "args": [arguments.factor]]);
+		}
+		return this;
+	}
+
 	public any function scalingMode(required string name) hint="Set the scaling algorithm preset" {
 		_resolveScalingMode(arguments.name);
 		arrayAppend(variables._ops, ["op": "scalingMode", "args": [arguments.name]]);
@@ -112,6 +121,12 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 
 	public struct function resize(required string srcPath, required string destPath, required numeric width, required numeric height, struct opts = {}) hint="Resize srcPath to width x height preserving aspect by default" {
 		of(arguments.srcPath).size(arguments.width, arguments.height);
+		_applyOpts(arguments.opts);
+		return toFile(arguments.destPath);
+	}
+
+	public struct function scaleImage(required string srcPath, required string destPath, required numeric factor, struct opts = {}) hint="One-shot scale by factor" {
+		of(arguments.srcPath).scale(arguments.factor);
 		_applyOpts(arguments.opts);
 		return toFile(arguments.destPath);
 	}
@@ -200,6 +215,8 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 				case "forceSize":builder = builder.forceSize(javacast("int", step.args[1]), javacast("int", step.args[2])); break;
 				case "width":    builder = builder.width(javacast("int", step.args[1])); break;
 				case "height":   builder = builder.height(javacast("int", step.args[1])); break;
+				case "scale1":   builder = builder.scale(javacast("double", step.args[1])); break;
+				case "scale2":   builder = builder.scale(javacast("double", step.args[1]), javacast("double", step.args[2])); break;
 				case "outputFormat":     builder = builder.outputFormat(javacast("string", step.args[1])); break;
 				case "outputFormatType": builder = builder.outputFormatType(javacast("string", step.args[1])); break;
 				case "outputQuality":    builder = builder.outputQuality(javacast("float", step.args[1])); break;
