@@ -221,6 +221,48 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 
 	/* ---------- Terminal: toFile ---------- */
 
+	public array function toFiles(required string destDir, string prefix = "thumb-") hint="Batch terminal. Writes one file per source. Returns array of result structs." {
+		if (!directoryExists(arguments.destDir)) createObject("java","java.io.File").init(javacast("string", arguments.destDir)).mkdirs();
+		if (!arrayLen(variables._ops) || variables._ops[1].op neq "of") {
+			_throw("InvalidArgument", "Builder requires of() to be called before toFiles", "");
+		}
+		var src = variables._ops[1].args[1];
+		var sources = [];
+		if (isArray(src)) {
+			sources = src;
+		} else if (directoryExists(src)) {
+			sources = directoryList(src, false, "path");
+		} else {
+			sources = [src];
+		}
+		var results = [];
+		for (var s in sources) {
+			variables._ops[1].args[1] = s;
+			var leaf = listLast(s, "/\");
+			var ext = listLast(leaf, ".");
+			var base = listDeleteAt(leaf, listLen(leaf, "."), ".");
+			var dest = arguments.destDir & arguments.prefix & base & "." & ext;
+			arrayAppend(results, toFile(dest));
+		}
+		return results;
+	}
+
+	public any function asBufferedImage() hint="Terminal: build and return the BufferedImage" {
+		var builder = _buildJavaBuilder();
+		return builder.asBufferedImage();
+	}
+
+	public struct function createThumbnail(required string srcPath, required string destPath, required numeric width, required numeric height, struct opts = {}) hint="Convenience: fit-within w x h, JPEG quality 0.85, scalingMode quality, useExifOrientation true" {
+		var effectiveOpts = duplicate(arguments.opts);
+		if (!structKeyExists(effectiveOpts, "quality"))            effectiveOpts.quality = 0.85;
+		if (!structKeyExists(effectiveOpts, "scalingMode"))        effectiveOpts.scalingMode = "quality";
+		if (!structKeyExists(effectiveOpts, "useExifOrientation")) effectiveOpts.useExifOrientation = true;
+		if (!structKeyExists(effectiveOpts, "outputFormat"))       effectiveOpts.outputFormat = "jpg";
+		of(arguments.srcPath).size(arguments.width, arguments.height);
+		_applyOpts(effectiveOpts);
+		return toFile(arguments.destPath);
+	}
+
 	public struct function toFile(required string destPath) hint="Builds and writes a single thumbnail; returns result struct" {
 		var start = getTickCount();
 		var builder = _buildJavaBuilder();
