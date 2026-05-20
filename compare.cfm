@@ -623,7 +623,11 @@
 		if (formIterations gt 20) formIterations = 20;
 	}
 
-	formThumbExifPassthrough = structKeyExists(form, "thumbExifPassthrough") && len(form.thumbExifPassthrough);
+	if (structKeyExists(form, "run")) {
+		formThumbExifPassthrough = structKeyExists(form, "thumbExifPassthrough") && len(form.thumbExifPassthrough);
+	} else {
+		formThumbExifPassthrough = true;
+	}
 	request.thumbExifPassthrough = formThumbExifPassthrough;
 
 	currentEngineLabel = structKeyExists(server, "boxlang") ? "BoxLang" : (structKeyExists(server, "lucee") ? "Lucee" : "Adobe");
@@ -690,7 +694,7 @@
 	<div style="margin-top: 0.6em;">
 		<label for="thumbExifPassthrough">Thumbnailator EXIF:</label>
 		<input type="checkbox" name="thumbExifPassthrough" id="thumbExifPassthrough" value="1"<cfif formThumbExifPassthrough> checked</cfif>>
-		<span class="note">pass <code>exifPassthrough: true</code> on Thumbnailator one-shots (flips its EXIF column from lost to preserved)</span>
+		<span class="note">pass <code>exifPassthrough: true</code> on Thumbnailator one-shots so it preserves EXIF like the other tools (default on; uncheck to see the strip-by-default behavior)</span>
 	</div>
 	<div style="margin-top: 0.8em;">
 		<button type="submit" name="run" value="1">Run comparison</button>
