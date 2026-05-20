@@ -176,6 +176,13 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 		return this;
 	}
 
+	public struct function convertFormat(required string srcPath, required string destPath, required string formatName, struct opts = {}) hint="One-shot format conversion" {
+		_resolveFormat(arguments.formatName);
+		of(arguments.srcPath).outputFormat(arguments.formatName).scale(1.0);
+		_applyOpts(arguments.opts);
+		return toFile(arguments.destPath);
+	}
+
 	public struct function watermarkImage(required string srcPath, required string destPath, required string wmPath, required string positionName, required numeric opacity, numeric insets, struct opts = {}) hint="One-shot watermark" {
 		of(arguments.srcPath);
 		if (structKeyExists(arguments, "insets")) {
