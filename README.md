@@ -197,7 +197,7 @@ The wrapper throws structured exceptions. All types live under the `Thumbnailato
 | `Thumbnailator.IOError` | Wraps `java.io.IOException` from the JAR |
 | `Thumbnailator.UnsupportedImage` | Wraps `UnsupportedFormatException` |
 
-Each throw carries `message`, `detail` (root Java exception text if any), and `extendedinfo` (a JSON dump of the inputs so debugging doesn't require rerunning the call).
+Each throw carries `message` and `detail` (root Java exception text if any). The exception `type` is one of the values in the table above, so you can `cfcatch` on the specific case you care about.
 
 ## Running the demo
 
