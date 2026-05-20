@@ -6,15 +6,15 @@ It does resize, scale, crop, rotate, watermark, format conversion, and batch pro
 
 ## Supported engines
 
-- Adobe ColdFusion 2016 (and newer): 95/95 tests pass
-- Lucee 5+ (tested on 5.4.8): 95/95 tests pass
-- BoxLang 1+ (tested on 1.13.0): 95/95 tests pass
+- Adobe ColdFusion 2016 (and newer): 105/105 tests pass
+- Lucee 5+ (tested on 5.4.8): 105/105 tests pass
+- BoxLang 1+ (tested on 1.13.0): 105/105 tests pass
 
 BoxLang needs the `bx-compat-cfml` module enabled and JDK 17+. The bundled `server-boxlang.json` sets both. If you wire BoxLang up yourself, copy the `boxlang` block from `server-boxlang.json` into your own config. The `Application.cfc` adds each JAR file explicitly to `this.javaSettings.loadPaths` (BoxLang's classloader doesn't scan directories the way Adobe and Lucee do), so pointing it at the bundled `lib/thumbnailator/` works out of the box.
 
 ### BoxLang cold-start nuance
 
-On a freshly started BoxLang server, the very first HTTP request after boot can fail with `[net.coobird.thumbnailator.Thumbnails] has not been located in the [java] resolver`. This is a BoxLang lifecycle quirk: the JAR loader in `Application.cfc` has not applied `javaSettings.loadPaths` by the time the first request hits the dispatcher. Any subsequent request will warm the classloader. Hit `/demo.cfm` or any single test file once, and the full `tests/index.cfm` aggregator then passes 95/95. Adobe CF 2016 and Lucee do not have this race.
+On a freshly started BoxLang server, the very first HTTP request after boot can fail with `[net.coobird.thumbnailator.Thumbnails] has not been located in the [java] resolver`. This is a BoxLang lifecycle quirk: the JAR loader in `Application.cfc` has not applied `javaSettings.loadPaths` by the time the first request hits the dispatcher. Any subsequent request will warm the classloader. Hit `/demo.cfm` or any single test file once, and the full `tests/index.cfm` aggregator then passes 105/105. Adobe CF 2016 and Lucee do not have this race.
 
 ### BoxLang server profiles
 
@@ -24,7 +24,7 @@ Three BoxLang server profiles are provided:
 - `server-boxlang-adobe.json` (port 8783): bx-compat-cfml engine=adobe
 - `server-boxlang-lucee.json` (port 8784): bx-compat-cfml engine=lucee
 
-All three pass 95/95 after the classloader warm-up described above. The compat module is not strictly required for the wrapper to function. It changes how BoxLang handles Adobe-flavored and Lucee-flavored idioms in surrounding code, which matters if you mix the wrapper into a larger codebase written against one of those dialects.
+All three pass 105/105 after the classloader warm-up described above. The compat module is not strictly required for the wrapper to function. It changes how BoxLang handles Adobe-flavored and Lucee-flavored idioms in surrounding code, which matters if you mix the wrapper into a larger codebase written against one of those dialects.
 
 ## Install
 
@@ -93,7 +93,20 @@ Each one-shot returns a result struct: `["ok": true, "destPath": ..., "width": .
 | `batchResize` | `(srcDir, destDir, width, height, opts)` | Returns `["results": [], "totalMs": ..., "count": ..., "totalBytes": ...]` |
 | `inspect` | `(srcPath)` | Returns width, height, format, sizeBytes, hasAlpha, exifOrientation |
 
-The `opts` struct accepts any of: `quality`, `scalingMode`, `useExifOrientation`, `allowOverwrite`, `outputFormat`, `outputFormatType`, `keepAspectRatio`. Only keys you actually set get applied, so partial opts work.
+The `opts` struct accepts any of: `quality`, `scalingMode`, `useExifOrientation`, `allowOverwrite`, `outputFormat`, `outputFormatType`, `keepAspectRatio`, `exifPassthrough`. Only keys you actually set get applied, so partial opts work.
+
+### exifPassthrough
+
+`exifPassthrough` (default `false`) - when `true`, the wrapper copies the source JPEG's APP1/Exif segment into the destination JPEG after Thumbnailator has finished writing, then forces the EXIF `Orientation` tag to `1` (normal) so downstream viewers don't double-rotate the image. The Thumbnailator Java library writes through `javax.imageio`, which strips APP1; this opt is the recovery hook.
+
+```cfml
+thumb.resize("photo.jpg", "small.jpg", 320, 240, ["exifPassthrough": true]);
+// Make, Model, DateTimeOriginal, GPS tags, etc. all survive. Orientation is reset to 1.
+```
+
+Only meaningful when both source and destination are JPEG. Silently skipped if either side is PNG, GIF, or BMP (those formats don't carry EXIF natively in the same APP1 form). Silently skipped if the source has no APP1/Exif segment at all.
+
+Caveat: the wrapper strips any APP1/Exif segment already present in the dest (Thumbnailator rarely writes one but some `outputFormatType` paths might) before splicing the source segment, to avoid duplicate APP1 markers. ICC, XMP, and other ancillary segments are not transferred - this is a deliberately narrow EXIF-only passthrough.
 
 ## Fluent builder
 

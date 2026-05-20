@@ -1,7 +1,7 @@
 <cfsetting requesttimeout="300">
 <cfinclude template="_testHelper.cfm">
 <cfscript>
-	tests = ["test_smoke.cfm", "test_resize.cfm", "test_rotate.cfm", "test_crop.cfm", "test_watermark.cfm", "test_format.cfm", "test_fluent.cfm", "test_errors.cfm"];
+	tests = ["test_smoke.cfm", "test_resize.cfm", "test_rotate.cfm", "test_crop.cfm", "test_watermark.cfm", "test_format.cfm", "test_fluent.cfm", "test_errors.cfm", "test_exif_passthrough.cfm"];
 	totalPasses = 0;
 	totalFailures = [];
 </cfscript>

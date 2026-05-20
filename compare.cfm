@@ -353,11 +353,17 @@
 
 	/* Each runner returns: ["ok": bool, "ms": numeric, "size": numeric, "path": string, "note": string] */
 
+	function thumbExifFlagOn() {
+		return structKeyExists(request, "thumbExifPassthrough") && request.thumbExifPassthrough;
+	}
+
 	function runThumbResize(required string src, required string dest) {
 		var thumb = new Thumbnailator();
 		var t0 = nowNanos();
+		var opts = ["quality": 0.85, "outputFormat": "jpg"];
+		if (thumbExifFlagOn()) opts["exifPassthrough"] = true;
 		try {
-			thumb.resize(arguments.src, arguments.dest, 320, 240, ["quality": 0.85, "outputFormat": "jpg"]);
+			thumb.resize(arguments.src, arguments.dest, 320, 240, opts);
 		} catch (any e) {
 			return ["ok": false, "ms": elapsedMsFromNanos(t0), "size": 0, "path": arguments.dest, "note": "ERROR: " & e.message];
 		}
@@ -367,8 +373,10 @@
 	function runThumbRotate(required string src, required string dest) {
 		var thumb = new Thumbnailator();
 		var t0 = nowNanos();
+		var opts = {};
+		if (thumbExifFlagOn()) opts["exifPassthrough"] = true;
 		try {
-			thumb.rotateImage(arguments.src, arguments.dest, 90);
+			thumb.rotateImage(arguments.src, arguments.dest, 90, opts);
 		} catch (any e) {
 			return ["ok": false, "ms": elapsedMsFromNanos(t0), "size": 0, "path": arguments.dest, "note": "ERROR: " & e.message];
 		}
@@ -378,8 +386,10 @@
 	function runThumbConvert(required string src, required string dest) {
 		var thumb = new Thumbnailator();
 		var t0 = nowNanos();
+		var opts = ["quality": 0.85];
+		if (thumbExifFlagOn()) opts["exifPassthrough"] = true;
 		try {
-			thumb.convertFormat(arguments.src, arguments.dest, "jpg", ["quality": 0.85]);
+			thumb.convertFormat(arguments.src, arguments.dest, "jpg", opts);
 		} catch (any e) {
 			return ["ok": false, "ms": elapsedMsFromNanos(t0), "size": 0, "path": arguments.dest, "note": "ERROR: " & e.message];
 		}
@@ -462,6 +472,103 @@
 		return ["ok": ok, "ms": elapsedMsFromNanos(t0), "size": fileSizeOrZero(arguments.dest), "path": arguments.dest, "note": ok ? "" : ("ERROR: " & r.out)];
 	}
 
+	/* Inspect runners (no dest file produced).
+	   Return shape: ["ok": bool, "ms": numeric, "size": numeric (source bytes), "path": "", "note": "" (unused),
+	                  "info": "WxH FMT size", "exifInfo": display string] */
+
+	function inspectRowOk(required numeric t0, required string info, required string exifInfo, required numeric srcSize) {
+		return [
+			"ok":       true,
+			"ms":       elapsedMsFromNanos(arguments.t0),
+			"size":     arguments.srcSize,
+			"path":     "",
+			"note":     "",
+			"info":     arguments.info,
+			"exifInfo": arguments.exifInfo
+		];
+	}
+
+	function inspectRowErr(required numeric t0, required string message) {
+		return [
+			"ok":       false,
+			"ms":       elapsedMsFromNanos(arguments.t0),
+			"size":     0,
+			"path":     "",
+			"note":     "ERROR: " & arguments.message,
+			"info":     "",
+			"exifInfo": ""
+		];
+	}
+
+	function runThumbInspect(required string src, required string ignored) {
+		var thumb = new Thumbnailator();
+		var t0 = nowNanos();
+		try {
+			var info = thumb.inspect(arguments.src);
+		} catch (any e) {
+			return inspectRowErr(t0, e.message);
+		}
+		var label = info.width & "x" & info.height & " " & ucase(info.format) & " " & humanSize(info.sizeBytes);
+		return inspectRowOk(t0, label, "orientation=" & info.exifOrientation, info.sizeBytes);
+	}
+
+	function runCfimageInspect(required string src, required string ignored) {
+		var t0 = nowNanos();
+		try {
+			var img = imageNew(arguments.src);
+			var info = imageInfo(img);
+		} catch (any e) {
+			return inspectRowErr(t0, e.message);
+		}
+		var fLen = fileSizeOrZero(arguments.src);
+		var fmt = ucase(listLast(arguments.src, "."));
+		var w = structKeyExists(info, "width") ? info.width : 0;
+		var h = structKeyExists(info, "height") ? info.height : 0;
+		var label = w & "x" & h & " " & fmt & " " & humanSize(fLen);
+		return inspectRowOk(t0, label, "n/a (imageInfo)", fLen);
+	}
+
+	function runImInspect(required string bin, required string src) {
+		var t0 = nowNanos();
+		var idResult = runExternal(arguments.bin, 'identify -format "%w %h %m %b" "' & arguments.src & '"');
+		if (!idResult.ok) return inspectRowErr(t0, idResult.out);
+		var idLine = listFirst(trim(idResult.out), chr(10) & chr(13));
+		var parts = listToArray(trim(idLine), " ");
+		var w = arrayLen(parts) gte 1 ? parts[1] : "?";
+		var h = arrayLen(parts) gte 2 ? parts[2] : "?";
+		var fmt = arrayLen(parts) gte 3 ? parts[3] : "?";
+		var sz = arrayLen(parts) gte 4 ? parts[4] : "?";
+		var label = w & "x" & h & " " & fmt & " " & sz;
+		/* Count EXIF tags via -format '%[EXIF:*]' */
+		var exifResult = runExternal(arguments.bin, 'identify -format "%[EXIF:*]" "' & arguments.src & '"');
+		var exifCount = 0;
+		if (exifResult.ok && len(trim(exifResult.out))) {
+			var lines = listToArray(trim(exifResult.out), chr(10) & chr(13));
+			exifCount = arrayLen(lines);
+		}
+		return inspectRowOk(t0, label, exifCount & " EXIF tag" & (exifCount eq 1 ? "" : "s"), fileSizeOrZero(arguments.src));
+	}
+
+	function runGmInspect(required string bin, required string src) {
+		var t0 = nowNanos();
+		var idResult = runExternal(arguments.bin, 'identify -format "%w %h %m %b" "' & arguments.src & '"');
+		if (!idResult.ok) return inspectRowErr(t0, idResult.out);
+		var idLine = listFirst(trim(idResult.out), chr(10) & chr(13));
+		var parts = listToArray(trim(idLine), " ");
+		var w = arrayLen(parts) gte 1 ? parts[1] : "?";
+		var h = arrayLen(parts) gte 2 ? parts[2] : "?";
+		var fmt = arrayLen(parts) gte 3 ? parts[3] : "?";
+		var sz = arrayLen(parts) gte 4 ? parts[4] : "?";
+		var label = w & "x" & h & " " & fmt & " " & sz;
+		var exifResult = runExternal(arguments.bin, 'identify -format "%[EXIF:*]" "' & arguments.src & '"');
+		var exifCount = 0;
+		if (exifResult.ok && len(trim(exifResult.out))) {
+			var lines = listToArray(trim(exifResult.out), chr(10) & chr(13));
+			exifCount = arrayLen(lines);
+		}
+		return inspectRowOk(t0, label, exifCount & " EXIF tag" & (exifCount eq 1 ? "" : "s"), fileSizeOrZero(arguments.src));
+	}
+
 	/* Repeat a runner N times, average elapsed, capture min/max.
 	   The runner is passed as a closure that accepts (src, dest) and returns a single-run struct. */
 	function runRepeated(required any runFn, required string src, required string dest, required numeric iterations) {
@@ -484,7 +591,7 @@
 			if (samples[j] gt maxMs) maxMs = samples[j];
 		}
 		var avg = total / arrayLen(samples);
-		return [
+		var out = [
 			"ok":    lastResult.ok,
 			"ms":    avg,
 			"min":   minMs,
@@ -494,10 +601,13 @@
 			"path":  lastResult.path,
 			"note":  lastResult.note
 		];
+		if (structKeyExists(lastResult, "info"))     out["info"]     = lastResult.info;
+		if (structKeyExists(lastResult, "exifInfo")) out["exifInfo"] = lastResult.exifInfo;
+		return out;
 	}
 
 	function unsupportedRow(required string reason) {
-		return ["ok": false, "ms": 0, "min": 0, "max": 0, "count": 0, "size": 0, "path": "", "note": arguments.reason];
+		return ["ok": false, "ms": 0, "min": 0, "max": 0, "count": 0, "size": 0, "path": "", "note": arguments.reason, "info": "", "exifInfo": ""];
 	}
 
 	ensureStarterExifImage(demoImageDir);
@@ -512,6 +622,9 @@
 		if (formIterations lt 1) formIterations = 1;
 		if (formIterations gt 20) formIterations = 20;
 	}
+
+	formThumbExifPassthrough = structKeyExists(form, "thumbExifPassthrough") && len(form.thumbExifPassthrough);
+	request.thumbExifPassthrough = formThumbExifPassthrough;
 
 	currentEngineLabel = structKeyExists(server, "boxlang") ? "BoxLang" : (structKeyExists(server, "lucee") ? "Lucee" : "Adobe");
 </cfscript>
@@ -574,6 +687,11 @@
 		<input type="number" name="iterations" id="iterations" value="<cfoutput>#encodeForHTMLAttribute(formIterations)#</cfoutput>" min="1" max="20">
 		<span class="note">1 = single shot; 2-20 = run N times and average</span>
 	</div>
+	<div style="margin-top: 0.6em;">
+		<label for="thumbExifPassthrough">Thumbnailator EXIF:</label>
+		<input type="checkbox" name="thumbExifPassthrough" id="thumbExifPassthrough" value="1"<cfif formThumbExifPassthrough> checked</cfif>>
+		<span class="note">pass <code>exifPassthrough: true</code> on Thumbnailator one-shots (flips its EXIF column from lost to preserved)</span>
+	</div>
 	<div style="margin-top: 0.8em;">
 		<button type="submit" name="run" value="1">Run comparison</button>
 	</div>
@@ -625,13 +743,20 @@
 				"cfimage":        cfimageAvailable ? runRepeated(runCfimageConvert, srcPath, convertDest.cfimage, formIterations) : unsupportedRow("not supported on engine"),
 				"ImageMagick":    imAvailable ? runRepeated(function(s,d){ return runImConvert(imBin, s, d); }, srcPath, convertDest.im, formIterations) : unsupportedRow("not available"),
 				"GraphicsMagick": gmAvailable ? runRepeated(function(s,d){ return runGmConvert(gmBin, s, d); }, srcPath, convertDest.gm, formIterations) : unsupportedRow("not available")
+			],
+			"inspect": [
+				"Thumbnailator":  runRepeated(runThumbInspect, srcPath, "", formIterations),
+				"cfimage":        cfimageAvailable ? runRepeated(runCfimageInspect, srcPath, "", formIterations) : unsupportedRow("not supported on engine"),
+				"ImageMagick":    imAvailable ? runRepeated(function(s,d){ return runImInspect(imBin, s); }, srcPath, "", formIterations) : unsupportedRow("not available"),
+				"GraphicsMagick": gmAvailable ? runRepeated(function(s,d){ return runGmInspect(gmBin, s); }, srcPath, "", formIterations) : unsupportedRow("not available")
 			]
 		];
 
 		labels = [
 			"resize":  "Resize 320x240, JPEG q=0.85",
 			"rotate":  "Rotate 90 degrees (keeps source format)",
-			"convert": "Convert format: input -> JPEG q=0.85"
+			"convert": "Convert format: input -> JPEG q=0.85",
+			"inspect": "Inspect (read metadata)"
 		];
 
 		function renderElapsedCell(required struct row) {
@@ -672,6 +797,29 @@
 			writeOutput("</tbody></table>");
 		}
 
+		function renderInspectTable(required string title, required struct rows) {
+			writeOutput("<h2>" & encodeForHTML(arguments.title) & "</h2>");
+			writeOutput("<table><thead><tr><th>Tool</th><th>Result</th><th>Source size</th><th>Elapsed (ms)</th><th>EXIF</th></tr></thead><tbody>");
+			var order = ["Thumbnailator", "cfimage", "ImageMagick", "GraphicsMagick"];
+			for (var tool in order) {
+				var row = arguments.rows[tool];
+				writeOutput("<tr>");
+				writeOutput("<td>" & encodeForHTML(tool) & "</td>");
+				if (row.ok) {
+					var info = structKeyExists(row, "info") ? row.info : "";
+					var exifInfo = structKeyExists(row, "exifInfo") ? row.exifInfo : "";
+					writeOutput("<td><span style='font-family:monospace'>" & encodeForHTML(info) & "</span></td>");
+					writeOutput("<td class='num'>" & encodeForHTML("(source: " & humanSize(row.size) & ")") & "</td>");
+					writeOutput(renderElapsedCell(row));
+					writeOutput("<td><span style='font-family:monospace;font-size:0.9em'>" & encodeForHTML(exifInfo) & "</span></td>");
+				} else {
+					writeOutput("<td class='err' colspan='4'>" & encodeForHTML(row.note) & "</td>");
+				}
+				writeOutput("</tr>");
+			}
+			writeOutput("</tbody></table>");
+		}
+
 		function renderSourceExifBanner(required boolean exifFnAvailable, required struct srcExif) {
 			writeOutput("<div class='note' style='margin: 0.5em 0 0.2em;'>Source EXIF: ");
 			if (!arguments.exifFnAvailable) {
@@ -695,6 +843,7 @@
 		renderTable(labels.resize,  results.resize,  srcExif);
 		renderTable(labels.rotate,  results.rotate,  srcExif);
 		renderTable(labels.convert, results.convert, srcExif);
+		renderInspectTable(labels.inspect, results.inspect);
 	</cfscript>
 </cfif>
 
