@@ -9,7 +9,7 @@
         "blockSensitivePaths": true,
         "webroot": "."
     },
-    "jvm": { "heapSize": 512 },
+    "jvm": { "heapSize": 512, "javaVersion": "openjdk21" },
     "profile": "development",
     "env": {
         "THUMBNAILATOR_JAR_PATH": "${THUMBNAILATOR_JAR_PATH}",

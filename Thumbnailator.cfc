@@ -346,14 +346,14 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 			switch (step.op) {
 				case "size":     builder = builder.size(javacast("int", step.args[1]), javacast("int", step.args[2])); break;
 				case "forceSize":builder = builder.forceSize(javacast("int", step.args[1]), javacast("int", step.args[2])); break;
-				case "rotate":   builder = builder.rotate(javacast("double", step.args[1])); break;
+				case "rotate":   builder = builder.rotate(createObject("java","java.lang.Double").init(step.args[1])); break;
 				case "width":    builder = builder.width(javacast("int", step.args[1])); break;
 				case "height":   builder = builder.height(javacast("int", step.args[1])); break;
-				case "scale1":   builder = builder.scale(javacast("double", step.args[1])); break;
-				case "scale2":   builder = builder.scale(javacast("double", step.args[1]), javacast("double", step.args[2])); break;
+				case "scale1":   builder = builder.scale(createObject("java","java.lang.Double").init(step.args[1])); break;
+				case "scale2":   builder = builder.scale(createObject("java","java.lang.Double").init(step.args[1]), createObject("java","java.lang.Double").init(step.args[2])); break;
 				case "outputFormat":     builder = builder.outputFormat(javacast("string", step.args[1])); break;
 				case "outputFormatType": builder = builder.outputFormatType(javacast("string", step.args[1])); break;
-				case "outputQuality":    builder = builder.outputQuality(javacast("float", step.args[1])); break;
+				case "outputQuality":    builder = builder.outputQuality(createObject("java","java.lang.Float").init(step.args[1])); break;
 				case "useOriginalFormat":builder = builder.useOriginalFormat(); break;
 				case "keepAspectRatio":  builder = builder.keepAspectRatio(javacast("boolean", step.args[1])); break;
 				case "useExifOrientation":builder = builder.useExifOrientation(javacast("boolean", step.args[1])); break;
@@ -375,9 +375,9 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 					var wmImage = variables.JImageIO.read(variables.JFile.init(javacast("string", step.args[1])));
 					if (isNull(wmImage)) _throw("UnsupportedImage", "Could not read watermark image: " & step.args[1], "");
 					if (arrayLen(step.args) gte 4) {
-						builder = builder.watermark(_resolvePosition(step.args[2]), wmImage, javacast("float", step.args[3]), javacast("int", step.args[4]));
+						builder = builder.watermark(_resolvePosition(step.args[2]), wmImage, createObject("java","java.lang.Float").init(step.args[3]), javacast("int", step.args[4]));
 					} else {
-						builder = builder.watermark(_resolvePosition(step.args[2]), wmImage, javacast("float", step.args[3]));
+						builder = builder.watermark(_resolvePosition(step.args[2]), wmImage, createObject("java","java.lang.Float").init(step.args[3]));
 					}
 					break;
 				default:

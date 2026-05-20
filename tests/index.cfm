@@ -10,7 +10,18 @@
 <h1>Thumbnailator - full test suite</h1>
 <cfloop array="#tests#" index="t">
 	<h2>#t#</h2>
-	<cfinclude template="#t#">
+	<cftry>
+		<cfinclude template="#t#">
+		<cfcatch type="any">
+			<cfscript>
+				request.passes = (structKeyExists(request, "passes") ? request.passes : 0);
+				request.failures = (structKeyExists(request, "failures") ? request.failures : []);
+				arrayAppend(request.failures, "ABORTED: " & cfcatch.message);
+				writeOutput("<div style='color:red;font-weight:bold'>ABORTED " & encodeForHTML(cfcatch.message) & "</div>");
+				writeOutput("<pre style='color:##600;background:##fee;padding:0.4em'>" & encodeForHTML(cfcatch.detail) & "</pre>");
+			</cfscript>
+		</cfcatch>
+	</cftry>
 	<cfscript>
 		totalPasses += request.passes;
 		for (f in request.failures) arrayAppend(totalFailures, t & ": " & f);
