@@ -77,5 +77,23 @@
 	thumb.resize(srcJpg, destG, 200, 100);
 	assert(fileExists(destG), "default behavior (no exifPassthrough) still produces a file");
 
+	/* inspect() now reads the actual EXIF Orientation from JPEG sources */
+	info = thumb.inspect(srcJpg);
+	assert(info.exifOrientation eq 6, "inspect() returns Orientation=6 for the synthesized JPEG fixture");
+
+	infoB = thumb.inspect(destB);
+	assert(infoB.exifOrientation eq 1, "inspect() returns Orientation=1 for an exifPassthrough output (orientation was reset)");
+
+	infoNoExif = thumb.inspect(srcNoExif);
+	assert(infoNoExif.exifOrientation eq 0, "inspect() returns 0 when the JPEG has no EXIF segment");
+
+	srcPng = makeFixture("inspect-png", 200, 100, "png");
+	infoPng = thumb.inspect(srcPng);
+	assert(infoPng.exifOrientation eq 0, "inspect() returns 0 for PNG sources (no EXIF carrier)");
+
+	srcRotated = makeJpegWithExifOrientation(3);
+	infoR = thumb.inspect(srcRotated);
+	assert(infoR.exifOrientation eq 3, "inspect() returns Orientation=3 for a JPEG with Orientation=3");
+
 	summarize();
 </cfscript>

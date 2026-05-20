@@ -254,7 +254,7 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 			"format":          fmt,
 			"sizeBytes":       javacast("long", fLen),
 			"hasAlpha":        javacast("boolean", hasAlpha),
-			"exifOrientation": javacast("int", 0)
+			"exifOrientation": javacast("int", _readExifOrientation(arguments.srcPath))
 		];
 	}
 
@@ -623,6 +623,33 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 			}
 		}
 		return out;
+	}
+
+	private numeric function _readExifOrientation(required string srcPath) hint="Returns the EXIF Orientation tag value (1..8) from a JPEG, or 0 if absent or unreadable" {
+		if (!_isJpegPath(arguments.srcPath)) return 0;
+		var exifBytes = _readExifAppSegment(arguments.srcPath);
+		if (isNull(exifBytes)) return 0;
+		var arrCls = createObject("java","java.lang.reflect.Array");
+		var slen = arrCls.getLength(exifBytes);
+		if (slen lt 18) return 0;
+		var tiffStart = 10;
+		var be = bitAnd(arrCls.getByte(exifBytes, javacast("int", tiffStart)), 255) eq 77;
+		var ifd0Offset = _readUint32(exifBytes, tiffStart + 4, be);
+		var ifd0Start = tiffStart + ifd0Offset;
+		if (ifd0Start + 2 gt slen) return 0;
+		var entryCount = _readUint16(exifBytes, ifd0Start, be);
+		var e = 0;
+		for (e = 0; e lt entryCount; e++) {
+			var entryStart = ifd0Start + 2 + (e * 12);
+			if (entryStart + 12 gt slen) break;
+			var tag = _readUint16(exifBytes, entryStart, be);
+			if (tag eq 274) {
+				var value = _readUint16(exifBytes, entryStart + 8, be);
+				if (value gte 1 && value lte 8) return value;
+				return 0;
+			}
+		}
+		return 0;
 	}
 
 	private numeric function _readUint16(required any bytes, required numeric pos, required boolean bigEndian) {
