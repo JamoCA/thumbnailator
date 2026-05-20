@@ -8,9 +8,9 @@ It does resize, scale, crop, rotate, watermark, format conversion, and batch pro
 
 - Adobe ColdFusion 2016 (and newer): 95/95 tests pass
 - Lucee 5+ (tested on 5.4.8): 95/95 tests pass
-- BoxLang 1+ (tested on 1.13.0): 51/95 tests pass
+- BoxLang 1+ (tested on 1.13.0): 95/95 tests pass
 
-BoxLang 1.13 has a Java method dispatch bug that breaks calls to Thumbnailator methods taking `double` or `float` arguments. That hits `scale`, `rotate`, `outputQuality`, and the watermark `opacity` arg. 51 of the 95 tests pass; the rest are blocked on the upstream issue. The wrapper has BoxLang-aware code paths where they helped, but the dispatch problem is below the CFML layer. Adobe CF 2016+ and Lucee 5+ run the whole suite clean.
+BoxLang needs the `bx-compat-cfml` module enabled and JDK 17+. The bundled `server-boxlang.json` sets both. If you wire BoxLang up yourself, copy the `boxlang` block from `server-boxlang.json` into your own config. The `Application.cfc` adds each JAR file explicitly to `this.javaSettings.loadPaths` (BoxLang's classloader doesn't scan directories the way Adobe and Lucee do), so pointing it at the bundled `lib/thumbnailator/` works out of the box.
 
 ## Install
 
@@ -22,7 +22,7 @@ box install thumbnailator
 
 ### Manual via CommandBox
 
-Drop `Thumbnailator.cfc` into your project and copy `lib/thumbnailator/thumbnailator-0.4.21.jar` somewhere your engine can load it. The bundled `Application.cfc` shows the pattern: it adds the JAR directory to `this.javaSettings.loadPaths`.
+Drop `Thumbnailator.cfc` into your project and copy `lib/thumbnailator/thumbnailator-0.4.21.jar` somewhere your engine can load it. The bundled `Application.cfc` shows the pattern: it enumerates the JAR files in the resolved directory and adds each one explicitly to `this.javaSettings.loadPaths` (Adobe CF and Lucee will accept the directory itself, but BoxLang needs file paths).
 
 ### Manual JAR placement
 
