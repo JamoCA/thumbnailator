@@ -2,6 +2,12 @@
 <cfscript>
 	request.passes = 0;
 	request.failures = [];
+	request._testHelperLoaded = true;
+
+	variables.outDir = expandPath("../demo-output/test/");
+	if (!directoryExists(variables.outDir)) {
+		createObject("java", "java.io.File").init(javacast("string", variables.outDir)).mkdirs();
+	}
 
 	function assert(required boolean condition, required string label) {
 		if (arguments.condition) {
@@ -58,11 +64,6 @@
 		try { iso = dateTimeFormat(now(), "iso"); }
 		catch (any e) { iso = dateTimeFormat(now(), "yyyy-mm-dd'T'HH:nn:ss"); }
 		return engine & " " & version & " / Java " & createObject("java", "java.lang.System").getProperty("java.version") & " / " & iso;
-	}
-
-	variables.outDir = expandPath("../demo-output/test/");
-	if (!directoryExists(variables.outDir)) {
-		createObject("java", "java.io.File").init(javacast("string", variables.outDir)).mkdirs();
 	}
 
 	function tempPath(required string suffix) {

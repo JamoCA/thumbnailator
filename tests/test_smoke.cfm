@@ -1,4 +1,4 @@
-<cfinclude template="_testHelper.cfm">
+<cfif !structKeyExists(request, "_testHelperLoaded")><cfinclude template="_testHelper.cfm"><cfelse><cfscript>request.passes = 0; request.failures = [];</cfscript></cfif>
 <cfscript>
 	writeOutput("<!doctype html><meta charset='utf-8'><title>thumbnailator smoke</title><style>body{font-family:monospace}</style>");
 	writeOutput("<h1>Thumbnailator - smoke test</h1>");
