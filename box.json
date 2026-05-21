@@ -6,6 +6,13 @@
     "slug": "thumbnailator",
     "shortDescription": "CFML wrapper for the Thumbnailator Java thumbnail library",
     "type": "cfml-library",
+    "homepage": "https://github.com/JamoCA/thumbnailator",
+    "documentation": "https://github.com/JamoCA/thumbnailator#readme",
+    "repository": {
+        "type": "git",
+        "URL": "https://github.com/JamoCA/thumbnailator"
+    },
+    "bugs": "https://github.com/JamoCA/thumbnailator/issues",
     "keywords": ["thumbnail", "image", "resize", "crop", "watermark", "rotate", "thumbnailator", "java"],
     "engines": [
         { "type": "adobe", "version": ">=2016.0.0" },
