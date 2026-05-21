@@ -17,7 +17,6 @@
         "webroot":"."
     },
     "jvm":{
-        "javaHome":"C:\\Program Files\\Java\\jdk-24",
         "args":[
             "-D:javax.xml.accessExternalDTD=''",
             "-D:javax.xml.accessExternalSchema=''",

@@ -32,6 +32,7 @@ component displayname="Thumbnailator" hint="ColdFusion wrapper for the Thumbnail
 
 		variables._ops = [];
 
+
 		return this;
 	}
 
