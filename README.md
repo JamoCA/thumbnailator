@@ -28,25 +28,33 @@ All three pass 105/105 after the classloader warm-up described above. The compat
 
 ## Install
 
-### ForgeBox
+### ForgeBox (CFML library)
 
 ```
 box install thumbnailator
 ```
 
-### Manual via CommandBox
+CommandBox fetches the wrapper from ForgeBox and the Thumbnailator JAR from Maven Central in one step. The JAR lands at `modules/thumbnailator/lib/thumbnailator/thumbnailator-0.4.21.jar` and `Application.cfc` picks it up automatically.
 
-Drop `Thumbnailator.cfc` into your project and copy `lib/thumbnailator/thumbnailator-0.4.21.jar` somewhere your engine can load it. The bundled `Application.cfc` shows the pattern: it enumerates the JAR files in the resolved directory and adds each one explicitly to `this.javaSettings.loadPaths` (Adobe CF and Lucee will accept the directory itself, but BoxLang needs file paths).
+### Developing on the wrapper
+
+Clone the repo, then:
+
+```
+box install
+```
+
+The JAR is not in the GitHub repo (`lib/` is gitignored). `box install` reads the project's `box.json` and pulls the JAR from Maven Central into `lib/thumbnailator/`. After that you can `box server start` against any of the server profiles.
 
 ### Manual JAR placement
 
-The wrapper loads the JAR from one of three places, in this order:
+If you can't reach Maven Central (air-gapped, corporate firewall), drop the JAR somewhere your engine can load it and point the wrapper at it via env var. The wrapper resolves the JAR from one of three places, in this order:
 
 1. `THUMBNAILATOR_JAR_PATH` env var or system property (full path to a `.jar`)
 2. `THUMBNAILATOR_JAR_DIR` env var or system property (directory containing the JAR)
-3. Bundled `./lib/thumbnailator/` next to `Application.cfc` (the default fallback)
+3. `./lib/thumbnailator/` next to `Application.cfc` (where `box install` places it)
 
-Set the env var in CommandBox via `server.json` or your OS, point it at wherever you keep the JAR, and you're done. No env var needed if you're happy with the bundled copy.
+Set the env var in CommandBox via `.env` or your OS, point it at wherever you keep the JAR, and you're done.
 
 ## Quickstart
 

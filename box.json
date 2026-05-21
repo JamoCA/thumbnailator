@@ -1,6 +1,6 @@
 {
     "name": "thumbnailator",
-    "version": "0.4.21+1",
+    "version": "0.4.21+2",
     "author": "James Moberg <james@sunstarmedia.com>",
     "location": "",
     "slug": "thumbnailator",
@@ -12,7 +12,14 @@
         { "type": "lucee", "version": ">=5.0.0" },
         { "type": "boxlang", "version": ">=1.0.0" }
     ],
+    "dependencies": {
+        "thumbnailator-jar": "jar:https://repo1.maven.org/maven2/net/coobird/thumbnailator/0.4.21/thumbnailator-0.4.21.jar"
+    },
+    "installPaths": {
+        "thumbnailator-jar": "lib/thumbnailator/"
+    },
     "ignore": [
+        "lib/",
         ".git*",
         ".env",
         ".cfformat.json",
