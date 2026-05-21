@@ -5,7 +5,7 @@
     "location": "",
     "slug": "thumbnailator",
     "shortDescription": "CFML wrapper for the Thumbnailator Java thumbnail library",
-    "type": "cfml-library",
+    "type": "modules",
     "homepage": "https://github.com/JamoCA/thumbnailator",
     "documentation": "https://github.com/JamoCA/thumbnailator#readme",
     "repository": {
