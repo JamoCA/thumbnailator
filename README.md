@@ -1,5 +1,9 @@
 # Thumbnailator
 
+[![ForgeBox Version](https://www.forgebox.io/api/v1/entry/thumbnailator/badges/version)](https://www.forgebox.io/view/thumbnailator)
+[![ForgeBox Downloads](https://www.forgebox.io/api/v1/entry/thumbnailator/badges/downloads)](https://www.forgebox.io/view/thumbnailator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A CFML wrapper around the [Thumbnailator](https://github.com/coobird/thumbnailator) Java library (net.coobird.thumbnailator:thumbnailator:0.4.21). One CFC, two ways to call it: a fluent builder for the picky stuff, and a set of one-shot helpers for the 80% of jobs that just need "resize this file to that size".
 
 It does resize, scale, crop, rotate, watermark, format conversion, and batch processing without making you write any Java interop code.
