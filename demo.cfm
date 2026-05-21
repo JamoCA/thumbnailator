@@ -90,7 +90,9 @@
 		var cutoff = dateAdd("s", -arguments.ageSeconds, now());
 		var files = directoryList(arguments.dir, false, "query");
 		for (var i = 1; i lte files.recordCount; i++) {
-			if (files.type[i] eq "File" && dateCompare(files.dateLastModified[i], cutoff) lt 0) {
+			if (files.type[i] neq "File") continue;
+			if (left(files.name[i], 1) eq ".") continue;
+			if (dateCompare(files.dateLastModified[i], cutoff) lt 0) {
 				try { fileDelete(files.directory[i] & "/" & files.name[i]); } catch (any e) {}
 			}
 		}
